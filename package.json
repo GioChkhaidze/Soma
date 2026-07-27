@@ -1,0 +1,50 @@
+{
+  "name": "soma-local",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "desktop:dev": "tauri dev -c apps/desktop/src-tauri/tauri.conf.json",
+    "desktop:build": "tauri build -c apps/desktop/src-tauri/tauri.conf.json -- --locked",
+    "desktop:build:linux": "tauri build -c apps/desktop/src-tauri/tauri.conf.json -b deb,appimage -- --locked",
+    "desktop:build:macos": "tauri build -c apps/desktop/src-tauri/tauri.conf.json -b app,dmg -- --locked",
+    "desktop:build:windows": "tauri build -c apps/desktop/src-tauri/tauri.conf.json -b nsis -- --locked",
+    "desktop:smoke": "tauri build -c apps/desktop/src-tauri/tauri.conf.json --no-bundle -- --locked",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "node --test test/*.test.js",
+    "test:ui": "playwright test",
+    "style:check": "node scripts/check-source-style.mjs && npm run docs:check",
+    "docs:check": "node scripts/check-documentation-style.mjs",
+    "typecheck": "tsc --noEmit",
+    "rust:fmt": "cargo fmt --all -- --check",
+    "rust:clippy": "cargo clippy --workspace --all-targets --locked -- -Dwarnings",
+    "rust:test": "cargo test --workspace --locked",
+    "verify": "npm run style:check && npm run verify:code && npm run desktop:smoke",
+    "verify:frontend": "npm run typecheck && npm test && npm run test:ui",
+    "verify:code": "npm run verify:frontend && npm run rust:fmt && npm run rust:clippy && npm run rust:test",
+    "check": "npm run verify"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.11.1",
+    "@xyflow/react": "^12.11.1",
+    "pdfjs-dist": "^6.1.200",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.0",
+    "@tauri-apps/cli": "^2.11.3",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "typescript": "^6.0.3",
+    "vite": "^8.1.0"
+  }
+}

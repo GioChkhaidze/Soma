@@ -1,0 +1,208 @@
+{
+  "cases": [
+    {
+      "name": "selection is trimmed and preserved",
+      "input": {
+        "kind": "pdf",
+        "document_name": " paper.pdf ",
+        "page_number": 2,
+        "page_count": 8,
+        "page_text": "Visible page text.",
+        "selected_text": " recursive depth is the central tradeoff ",
+        "selection_page_number": 2
+      },
+      "canonical": {
+        "kind": "pdf",
+        "document_name": "paper.pdf",
+        "page_number": 2,
+        "page_count": 8,
+        "page_text": "Visible page text.",
+        "selected_text": "recursive depth is the central tradeoff",
+        "selection_page_number": 2
+      }
+    },
+    {
+      "name": "null selection is omitted",
+      "input": {
+        "kind": "pdf",
+        "document_name": "paper.pdf",
+        "page_number": 2,
+        "page_count": 8,
+        "page_text": "Visible page text.",
+        "selected_text": null,
+        "selection_page_number": null
+      },
+      "canonical": {
+        "kind": "pdf",
+        "document_name": "paper.pdf",
+        "page_number": 2,
+        "page_count": 8,
+        "page_text": "Visible page text."
+      }
+    },
+    {
+      "name": "blank selection and null selection page are omitted",
+      "input": {
+        "kind": "pdf",
+        "document_name": "paper.pdf",
+        "page_number": 2,
+        "page_count": 8,
+        "page_text": "Visible page text.",
+        "selected_text": "   ",
+        "selection_page_number": null
+      },
+      "canonical": {
+        "kind": "pdf",
+        "document_name": "paper.pdf",
+        "page_number": 2,
+        "page_count": 8,
+        "page_text": "Visible page text."
+      }
+    },
+    {
+      "name": "selection page without selected text is omitted",
+      "input": {
+        "kind": "pdf",
+        "document_name": "paper.pdf",
+        "page_number": 2,
+        "page_count": 8,
+        "page_text": "Visible page text.",
+        "selection_page_number": 2
+      },
+      "canonical": {
+        "kind": "pdf",
+        "document_name": "paper.pdf",
+        "page_number": 2,
+        "page_count": 8,
+        "page_text": "Visible page text."
+      }
+    },
+    {
+      "name": "current page cannot exceed page count",
+      "input": {
+        "kind": "pdf",
+        "document_name": "paper.pdf",
+        "page_number": 9,
+        "page_count": 8,
+        "page_text": "Visible page text."
+      },
+      "canonical": null
+    },
+    {
+      "name": "out-of-range selection page is rejected",
+      "input": {
+        "kind": "pdf",
+        "document_name": "paper.pdf",
+        "page_number": 2,
+        "page_count": 8,
+        "page_text": "Visible page text.",
+        "selected_text": "Selected text.",
+        "selection_page_number": 9
+      },
+      "canonical": null
+    },
+    {
+      "name": "zero selection page is rejected",
+      "input": {
+        "kind": "pdf",
+        "document_name": "paper.pdf",
+        "page_number": 2,
+        "page_count": 8,
+        "page_text": "Visible page text.",
+        "selected_text": "Selected text.",
+        "selection_page_number": 0
+      },
+      "canonical": null
+    },
+    {
+      "name": "fractional selection page is rejected",
+      "input": {
+        "kind": "pdf",
+        "document_name": "paper.pdf",
+        "page_number": 2,
+        "page_count": 8,
+        "page_text": "Visible page text.",
+        "selected_text": "Selected text.",
+        "selection_page_number": 2.5
+      },
+      "canonical": null
+    },
+    {
+      "name": "malformed selected text is rejected",
+      "input": {
+        "kind": "pdf",
+        "document_name": "paper.pdf",
+        "page_number": 2,
+        "page_count": 8,
+        "page_text": "Visible page text.",
+        "selected_text": 42,
+        "selection_page_number": 2
+      },
+      "canonical": null
+    },
+    {
+      "name": "malformed selection page is rejected",
+      "input": {
+        "kind": "pdf",
+        "document_name": "paper.pdf",
+        "page_number": 2,
+        "page_count": 8,
+        "page_text": "Visible page text.",
+        "selected_text": "Selected text.",
+        "selection_page_number": "2"
+      },
+      "canonical": null
+    },
+    {
+      "name": "missing page text is rejected",
+      "input": {
+        "kind": "pdf",
+        "document_name": "paper.pdf",
+        "page_number": 2,
+        "page_count": 8
+      },
+      "canonical": null
+    },
+    {
+      "name": "non-string page text is rejected",
+      "input": {
+        "kind": "pdf",
+        "document_name": "paper.pdf",
+        "page_number": 2,
+        "page_count": 8,
+        "page_text": null
+      },
+      "canonical": null
+    },
+    {
+      "name": "unknown fields are rejected",
+      "input": {
+        "kind": "pdf",
+        "document_name": "paper.pdf",
+        "page_number": 2,
+        "page_count": 8,
+        "page_text": "Visible page text.",
+        "unknown_field": true
+      },
+      "canonical": null
+    }
+  ],
+  "bounds": {
+    "document_name": 256,
+    "page_text": 12000,
+    "selected_text": 6000
+  },
+  "truncation_case": {
+    "name": "bounded strings are truncated by Unicode character",
+    "character": "🧠",
+    "input": {
+      "kind": "pdf",
+      "document_name": "paper.pdf",
+      "page_number": 1,
+      "page_count": 1,
+      "page_text": "Visible page text.",
+      "selected_text": "Selected text.",
+      "selection_page_number": 1
+    }
+  }
+}

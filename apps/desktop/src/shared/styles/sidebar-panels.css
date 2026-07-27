@@ -1,0 +1,875 @@
+﻿.workspaceImportPanel {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.workspaceMiniStatus {
+  display: grid;
+  align-items: center;
+  row-gap: 1px;
+  min-width: 0;
+  padding: 2px 0 8px;
+}
+
+.workspaceMiniStatus strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: var(--text-ui);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspaceMiniStatus small,
+.workspaceNotice,
+.workspaceError {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: var(--line-ui);
+}
+
+.workspaceMiniStatus small {
+  grid-column: 1;
+}
+
+.workspaceActions,
+.workspaceCompileAction,
+.workspaceInlineAction {
+  display: grid;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.workspaceActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.workspaceQuickActions {
+  display: grid;
+  gap: 6px;
+}
+
+.workspaceCompileAction {
+  grid-template-columns: minmax(0, 1fr) 34px;
+}
+
+.workspaceCompileAction p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: var(--line-ui);
+}
+
+.workspaceInlineAction {
+  grid-template-columns: minmax(0, 1fr) 34px;
+}
+
+.workspaceInlineAction input {
+  width: 100%;
+  min-height: 34px;
+  padding: 0 9px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  outline: none;
+}
+
+.workspaceInlineAction input:focus {
+  border-color: rgba(255, 255, 255, 0.52);
+}
+
+.workspaceInlineAction input:disabled {
+  opacity: 0.46;
+}
+
+.workspaceActions button,
+.workspaceCompileAction button,
+.workspaceInlineAction button {
+  position: relative;
+  display: grid;
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.workspaceActions button {
+  width: 34px;
+  min-width: 34px;
+  padding: 0;
+  color: var(--muted);
+}
+
+.workspaceActions button.isPrimary {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.9);
+  color: #101010;
+}
+
+.workspaceActions button:hover,
+.workspaceActions button:focus-visible,
+.workspaceCompileAction button:hover,
+.workspaceCompileAction button:focus-visible,
+.workspaceInlineAction button:hover,
+.workspaceInlineAction button:focus-visible {
+  border-color: rgba(255, 255, 255, 0.48);
+  outline: none;
+}
+
+.workspaceActions button:disabled,
+.workspaceCompileAction button:disabled,
+.workspaceInlineAction button:disabled {
+  cursor: default;
+  opacity: 0.42;
+}
+
+.workspaceActions svg,
+.workspaceCompileAction svg,
+.workspaceInlineAction svg,
+.settingsIcon {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.workspaceNotice,
+.workspaceError {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.workspaceNotice {
+  color: #e5e5e5;
+}
+
+.workspaceError {
+  color: #cfcfcf;
+}
+
+.jobRunsPanel {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.jobRunFocus,
+.jobRunStatusStrip,
+.jobRunDetailHeader,
+.jobRunActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.jobRunFocus {
+  justify-content: space-between;
+  align-items: start;
+  min-width: 0;
+  padding: 13px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.jobRunFocusCopy {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.jobRunFocusCopy h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--text-base);
+  line-height: var(--line-heading);
+}
+
+.jobRunFocusCopy p {
+  max-width: 58ch;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: var(--line-ui);
+}
+
+.jobRunFocusCopy span,
+.jobRunDetailHeader span,
+.jobRunFacts dt,
+.jobRunRow span,
+.jobRunRow small {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+}
+
+.jobRunStatusStrip {
+  flex-wrap: wrap;
+  margin: 0;
+  gap: 7px;
+}
+
+.jobRunStatusStrip div {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-height: 24px;
+  padding: 0 7px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.jobRunStatusStrip dt {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+}
+
+.jobRunStatusStrip dd {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--text-xs);
+}
+
+.jobRunList {
+  display: grid;
+  gap: 6px;
+  max-height: min(190px, 28vh);
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.jobRunRow {
+  display: grid;
+  grid-template-columns: minmax(62px, auto) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.028);
+  color: var(--text);
+  cursor: default;
+  text-align: left;
+}
+
+.jobRunRow strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jobRunRow.isSelected {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.jobRunDetail {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.jobRunDetailHeader {
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.jobRunDetailHeader h3 {
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jobRunDetailHeader time {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  white-space: nowrap;
+}
+
+.jobRunFacts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.jobRunFacts div {
+  min-width: 0;
+}
+
+.jobRunFacts dd {
+  margin: 2px 0 0;
+  color: var(--text);
+  font-size: var(--text-sm);
+}
+
+.jobRunHint {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: var(--line-ui);
+}
+
+.jobRunAdvanced {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.jobRunAdvanced summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+}
+
+.jobRunPath {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: var(--line-ui);
+}
+
+.jobRunAdvancedFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.jobRunAdvancedFooter span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jobRunActions button {
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--muted);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+}
+
+.jobRunAdvancedFooter button {
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+}
+
+.jobRunFocus .jobRunActions {
+  flex: 0 0 auto;
+}
+
+.jobRunFocus .jobRunActions button {
+  min-height: 32px;
+  padding: 0 12px;
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+}
+
+.jobRunActions button:hover,
+.jobRunActions button:focus-visible,
+.jobRunAdvancedFooter button:hover,
+.jobRunAdvancedFooter button:focus-visible {
+  border-color: rgba(255, 255, 255, 0.34);
+  color: var(--text);
+  outline: none;
+}
+
+.jobRunActions button:disabled,
+.jobRunAdvancedFooter button:disabled {
+  cursor: default;
+  opacity: 0.42;
+}
+
+.sidebarSearch {
+  display: grid;
+  align-content: start;
+  grid-auto-rows: max-content;
+  gap: 10px;
+}
+
+.searchField {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) 24px;
+  align-items: center;
+  align-self: start;
+  height: 36px;
+  min-height: 36px;
+  padding: 0 7px 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-md);
+  background: #161616;
+  box-shadow: none;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.searchField:focus-within {
+  border-color: rgba(255, 255, 255, 0.34);
+  background: #1b1b1b;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.searchIcon,
+.searchClearIcon {
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+}
+
+.searchIcon {
+  width: 15px;
+  height: 15px;
+  color: rgba(255, 255, 255, 0.56);
+}
+
+.searchField input {
+  width: 100%;
+  min-height: 34px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  outline: none;
+}
+
+.searchField input {
+  min-width: 0;
+  padding: 0 7px;
+  font-size: var(--text-sm);
+  line-height: 1;
+}
+
+.searchField input::placeholder {
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.searchField input:disabled {
+  cursor: default;
+}
+
+.searchField:has(input:disabled) {
+  opacity: 0.56;
+}
+
+.searchClear {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.58);
+  cursor: pointer;
+}
+
+.searchClear:hover,
+.searchClear:focus-visible {
+  background: rgba(255, 255, 255, 0.11);
+  color: var(--text);
+  outline: none;
+}
+
+.searchClearIcon {
+  width: 14px;
+  height: 14px;
+}
+
+.searchResults {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.searchResultsMeta {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.48);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.searchResults button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  min-width: 0;
+  padding: 8px 8px 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.028);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.searchResults button:hover,
+.searchResults button:focus-visible,
+.searchResults button.isActive {
+  border-color: rgba(255, 255, 255, 0.26);
+  background: rgba(255, 255, 255, 0.06);
+  outline: none;
+}
+
+.searchResultMain {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.searchResultTitle {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: var(--text-sm);
+  line-height: var(--line-ui);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.searchResultPreview {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.54);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.searchResultTitle mark,
+.searchResultPreview mark {
+  padding: 0 1px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.searchResultType {
+  display: inline-flex;
+  align-items: center;
+  max-width: 72px;
+  min-height: 20px;
+  padding: 0 6px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  line-height: 1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.reviewTray {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.reviewNotice {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: var(--line-ui);
+}
+
+.reviewFilters button,
+.reviewActions button {
+  min-height: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--text);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+}
+
+.reviewFilters button:hover,
+.reviewFilters button:focus-visible,
+.reviewFilters button.isActive,
+.reviewActions button:hover,
+.reviewActions button:focus-visible {
+  border-color: rgba(255, 255, 255, 0.44);
+  color: var(--accent);
+  outline: none;
+}
+
+.reviewFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.reviewFilters button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 8px;
+}
+
+.reviewFilters button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reviewFilters button strong {
+  color: var(--text);
+  font-weight: var(--weight-regular);
+}
+
+.reviewInbox {
+  display: grid;
+  grid-template-rows: minmax(0, auto) auto;
+  gap: 12px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.reviewUpdateList {
+  display: grid;
+  gap: 6px;
+  max-height: min(220px, 30vh);
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.reviewUpdateRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.028);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.reviewUpdateRow small {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+}
+
+.reviewUpdateText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.reviewUpdateText strong,
+.reviewUpdateText > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reviewUpdateText strong {
+  color: var(--text);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-regular);
+}
+
+.reviewUpdateText > span {
+  color: var(--muted);
+  font-size: var(--text-2xs);
+}
+
+.reviewUpdateRow:hover,
+.reviewUpdateRow:focus-visible,
+.reviewUpdateRow.isSelected {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.07);
+  outline: none;
+}
+
+.reviewItem {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+}
+
+.reviewItem.isOpen {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.reviewItemSummary {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  color: var(--text);
+  text-align: left;
+}
+
+.reviewItemSummary small {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+}
+
+.reviewItemSummary strong {
+  font-size: var(--text-sm);
+  line-height: var(--line-heading);
+  overflow-wrap: anywhere;
+}
+
+.reviewItemDetails {
+  display: grid;
+  gap: 8px;
+}
+
+.reviewItemDetails p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: var(--line-ui);
+}
+
+.reviewItemDetails .reviewItemTarget {
+  color: var(--text);
+  font-size: var(--text-xs);
+  overflow-wrap: anywhere;
+}
+
+.reviewMutationPayload {
+  display: grid;
+  gap: 5px;
+  padding: 8px 0;
+  border-block: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.reviewMutationPayload strong {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-regular);
+}
+
+.reviewItemDetails .reviewMutationPayload p {
+  max-height: min(240px, 32vh);
+  overflow: auto;
+  color: var(--text);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.reviewActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.reviewActions button {
+  padding: 0 7px;
+}
+
+.reviewActions button:disabled {
+  cursor: default;
+  opacity: 0.38;
+}
+
+.reviewEmpty {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}

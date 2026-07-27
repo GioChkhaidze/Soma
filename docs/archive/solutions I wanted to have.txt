@@ -1,0 +1,52 @@
+EARLY PROBLEM NOTES
+
+Status
+
+This file summarizes two early product ideas. It is not a current backlog.
+
+1. Assisted educational drawing
+
+Idea
+
+An AI assistant improves rough educational drawings in an Excalidraw-style canvas.
+
+Possible value
+
+- Improve diagrams for videos, lectures, and educational material.
+- Help users who have limited drawing or handwriting skill.
+- Let a user and an AI assistant work on one canvas.
+
+Risks
+
+- The generated drawing can differ from user intent.
+- Image generation can be slow or expensive.
+
+Result
+
+This idea is outside Soma scope.
+
+2. Graph conversation interface
+
+Idea
+
+A graph interface organizes conversation content and lets users continue work from
+selected concepts.
+
+Possible value
+
+- Search across conversations.
+- Find old conclusions and reasoning.
+- Continue from a selected node.
+- Grow a conversation in multiple directions.
+
+Risks
+
+- Automatic organization can be incorrect.
+- A graph can become too dense.
+- Node and edge definitions need explicit rules.
+- The interface must preserve readable chat history.
+
+Result
+
+This idea became Soma. Current architecture requires evidence, stable graph truth, and
+separate chat scopes.

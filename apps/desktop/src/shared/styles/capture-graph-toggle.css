@@ -1,0 +1,53 @@
+.captureGraphToggle {
+  display: grid;
+  width: 30px;
+  height: 32px;
+  min-width: 30px;
+  min-height: 32px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.42);
+  cursor: pointer;
+}
+
+.captureGraphToggle svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.65;
+}
+
+.captureGraphToggle:hover,
+.captureGraphToggle:focus-visible {
+  border-color: rgba(255, 255, 255, 0.16);
+  color: var(--text);
+  outline: none;
+}
+
+.captureGraphToggle.isActive {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+}
+
+.captureGraphToggle.isLightSurface {
+  color: rgba(17, 17, 17, 0.52);
+}
+
+.captureGraphToggle.isLightSurface:hover,
+.captureGraphToggle.isLightSurface:focus-visible {
+  border-color: rgba(17, 17, 17, 0.18);
+  color: var(--paper-ink);
+}
+
+.captureGraphToggle.isLightSurface.isActive {
+  border-color: rgba(17, 17, 17, 0.2);
+  background: rgba(17, 17, 17, 0.08);
+  color: var(--paper-ink);
+}

@@ -1,0 +1,305 @@
+@import 'pdfjs-dist/web/pdf_viewer.css' layer(pdfjs);
+
+.paperReader {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: var(--radius-lg);
+  background: #141414;
+  box-shadow: var(--shadow-panel);
+}
+
+.paperToolbar {
+  display: grid;
+  grid-template-columns: minmax(170px, 1fr) auto minmax(170px, 1fr);
+  align-items: center;
+  gap: 14px;
+  min-height: 52px;
+  padding: 7px 10px 7px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0c0c0c;
+}
+
+.paperIdentity,
+.paperTools,
+.paperToolbarEnd {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.paperIdentity {
+  gap: 9px;
+}
+
+.paperIdentity > svg {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: var(--accent-soft);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+}
+
+.paperIdentity > div {
+  display: grid;
+  min-width: 0;
+}
+
+.paperIdentity strong,
+.paperIdentity span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.paperIdentity strong {
+  color: var(--text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.paperIdentity span {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+}
+
+.paperTools {
+  justify-content: center;
+  gap: 4px;
+}
+
+.paperToolbarEnd {
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.paperTools button,
+.paperClose {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+}
+
+.paperTools button:last-child {
+  width: auto;
+  padding: 0 8px;
+}
+
+.paperTools button:hover,
+.paperTools button:focus-visible,
+.paperClose:hover,
+.paperClose:focus-visible {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text);
+  outline: none;
+}
+
+.paperTools button:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.paperTools svg,
+.paperClose svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.paperPageCount,
+.paperZoom {
+  min-width: 54px;
+  color: var(--accent-soft);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-align: center;
+}
+
+.paperZoom {
+  min-width: 40px;
+}
+
+.paperToolDivider {
+  width: 1px;
+  height: 18px;
+  margin: 0 5px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.paperSelectionHint {
+  overflow: hidden;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.paperSelection {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 190px;
+  min-height: 28px;
+  padding: 0 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.17);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.paperSelection svg {
+  flex: 0 0 auto;
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.7;
+}
+
+.paperStage {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+
+.paperViewport {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  background: #1b1b1b;
+  outline: none;
+  scroll-behavior: smooth;
+  scrollbar-gutter: stable both-edges;
+}
+
+.paperViewport:focus-visible {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.paperViewport .pdfViewer {
+  padding: 22px 18px calc(var(--space-dock) + 36px);
+}
+
+.paperViewport .pdfViewer .page {
+  margin: 0 auto 18px;
+  border: 0;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.34);
+}
+
+.paperViewport .textLayer ::selection {
+  background: rgba(0, 86, 180, 0.34);
+}
+
+.paperLoading,
+.paperError {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  width: min(360px, calc(100% - 40px));
+  transform: translate(-50%, -50%);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+.paperLoading span {
+  width: 26px;
+  height: 26px;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  border-top-color: rgba(255, 255, 255, 0.74);
+  border-radius: 50%;
+  animation: paper-loading 760ms linear infinite;
+}
+
+.paperError strong {
+  color: var(--text);
+  font-size: var(--text-ui);
+}
+
+.paperError span {
+  max-width: 55ch;
+  overflow-wrap: anywhere;
+}
+
+@keyframes paper-loading {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 920px) {
+  .paperToolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .paperTools {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .paperSelectionHint {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .paperIdentity span,
+  .paperSelection {
+    display: none;
+  }
+
+  .paperToolbar {
+    min-height: 48px;
+    padding-left: 10px;
+  }
+
+  .paperViewport .pdfViewer {
+    padding: 12px 8px 28px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .paperViewport {
+    scroll-behavior: auto;
+  }
+
+  .paperLoading span {
+    animation: none;
+  }
+}

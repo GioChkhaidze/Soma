@@ -1,0 +1,584 @@
+﻿.workspaceShell {
+  position: relative;
+  contain: layout style;
+  min-width: 0;
+  min-height: 0;
+}
+
+.workspaceView {
+  position: absolute;
+  inset: 0;
+  min-width: 0;
+  min-height: 0;
+}
+
+.workspaceView[aria-hidden="true"] {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.graphWorkspace {
+  contain: layout paint style;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--bg-soft);
+}
+
+.workspaceHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(5, 5, 5, 0.58);
+}
+
+.eyebrow,
+.documentType {
+  color: var(--accent-soft);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.workspaceHeader h2 {
+  font-size: var(--text-panel-title);
+  font-weight: var(--weight-semibold);
+  margin: 0;
+}
+
+.versionBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: var(--radius-md);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.projectionControls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 220px;
+}
+
+.modeButtons {
+  display: inline-flex;
+  min-height: 30px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+}
+
+.modeButtons button {
+  min-width: 54px;
+  border: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.modeButtons button:last-child {
+  border-right: 0;
+}
+
+.modeButtons button:hover,
+.modeButtons button:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+  outline: none;
+}
+
+.modeButtons button.isActive {
+  background: #242424;
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+}
+
+.pinButton {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.pinButton.isPinned {
+  border-color: rgba(210, 210, 210, 0.48);
+  color: var(--accent-soft);
+}
+
+.graphCanvas {
+  position: relative;
+  contain: layout paint style;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.graphCanvas::before {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.055) 1px, transparent 1px);
+  background-size: 42px 42px;
+  content: "";
+  opacity: 0.72;
+  pointer-events: none;
+  z-index: var(--z-base);
+}
+
+.canvasEmptyState {
+  position: absolute;
+  left: 50%;
+  top: 53%;
+  display: grid;
+  gap: 4px;
+  width: min(340px, calc(100% - 48px));
+  transform: translate(-50%, -50%);
+  color: var(--muted);
+  pointer-events: auto;
+  text-align: center;
+  z-index: var(--z-overlay);
+}
+
+.canvasEmptyState p {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+}
+
+.canvasEmptyState span {
+  font-size: var(--text-sm);
+}
+
+.canvasEmptyState button {
+  justify-self: center;
+  min-height: 34px;
+  margin-top: 8px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.canvasEmptyState button:hover,
+.canvasEmptyState button:focus-visible {
+  border-color: rgba(255, 255, 255, 0.44);
+  outline: none;
+}
+
+.canvasEmptyState button:disabled {
+  cursor: default;
+  opacity: 0.44;
+}
+
+.reactFlowCanvas {
+  position: absolute;
+  inset: 0;
+  contain: layout paint style;
+  width: 100%;
+  height: 100%;
+  z-index: var(--z-graph);
+}
+
+.reactFlowCanvas .react-flow__viewport {
+  will-change: transform;
+}
+
+.reactFlowCanvas .react-flow__pane {
+  cursor: grab;
+}
+
+.reactFlowCanvas .react-flow__pane:active {
+  cursor: grabbing;
+}
+
+.reactFlowCanvas .react-flow__node {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  contain: layout style;
+  overflow: visible;
+}
+
+.reactFlowCanvas .react-flow__node.dragging {
+  will-change: transform;
+}
+
+.reactFlowCanvas .react-flow__node:hover,
+.reactFlowCanvas .react-flow__node:focus-within {
+  z-index: var(--z-tooltip) !important;
+}
+
+.reactFlowCanvas .react-flow__edges {
+  z-index: 1;
+}
+
+.reactFlowCanvas .react-flow__nodes {
+  z-index: 2;
+}
+
+.reactFlowCanvas .react-flow__edge-path {
+  stroke: rgba(255, 255, 255, 0.46);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.35;
+  vector-effect: non-scaling-stroke;
+}
+
+.reactFlowCanvas .somaEdge--far .react-flow__edge-path {
+  stroke: rgba(255, 255, 255, 0.28);
+  stroke-width: 0.95;
+}
+
+.reactFlowCanvas .somaEdge--mid .react-flow__edge-path {
+  stroke: rgba(218, 218, 218, 0.62);
+  stroke-width: 1.35;
+}
+
+.reactFlowCanvas .somaEdge--near .react-flow__edge-path {
+  stroke: rgba(238, 238, 238, 0.78);
+  stroke-width: 1.85;
+}
+
+.reactFlowCanvas .somaEdge--tree .react-flow__edge-path {
+  stroke-dasharray: none;
+}
+
+.reactFlowCanvas .somaEdge--hybrid .react-flow__edge-path {
+  stroke-dasharray: 7 7;
+}
+
+.reactFlowCanvas .somaEdge--graph .react-flow__edge-path {
+  stroke-dasharray: none;
+}
+
+.reactFlowCanvas .somaEdge--connected .react-flow__edge-path {
+  stroke: rgba(255, 255, 255, 0.9);
+  stroke-width: 2.25;
+}
+
+.reactFlowCanvas .somaEdge--dimmed .react-flow__edge-path {
+  stroke: rgba(255, 255, 255, 0.16);
+  stroke-width: 1;
+}
+
+.reactFlowCanvas .react-flow__attribution,
+.reactFlowCanvas .react-flow__attribution a {
+  color: #000;
+}
+
+.graphNode {
+  position: relative;
+  display: grid;
+  gap: 7px;
+  width: clamp(190px, 22vw, 260px);
+  min-height: 128px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  background: rgba(16, 16, 16, 0.95);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.graphNode:not(.graphNode--far)::after {
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  display: block;
+  max-width: 220px;
+  padding: 5px 8px 6px;
+  overflow: hidden;
+  transform: translateY(-50%) translateX(-4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  background: #1f1f1f;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
+  color: var(--text);
+  content: attr(data-tooltip);
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  line-height: 1.2;
+  opacity: 0;
+  pointer-events: none;
+  text-overflow: ellipsis;
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+  white-space: nowrap;
+  z-index: var(--z-tooltip);
+}
+
+.graphNode:not(.graphNode--far):hover::after,
+.graphNode:not(.graphNode--far):focus-visible::after {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+.graphNode--far {
+  width: 18px;
+  min-width: 18px;
+  height: 18px;
+  min-height: 18px;
+  padding: 0;
+  place-items: center;
+  overflow: visible;
+  border-color: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: transparent;
+}
+
+.graphNode--mid {
+  grid-template-columns: minmax(44px, 1fr) 24px;
+  align-items: center;
+  gap: 10px;
+  width: max-content;
+  max-width: 190px;
+  min-height: 34px;
+  padding: 6px 8px;
+  border-color: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(18, 18, 18, 0.86);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.22);
+}
+
+.graphNode--near {
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
+}
+
+.graphNodeDot {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.54);
+  border-radius: 999px;
+  background: #d9d9d9;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.06), 0 0 24px rgba(255, 255, 255, 0.22);
+}
+
+.graphNodeHandle {
+  width: 1px;
+  height: 1px;
+  min-width: 1px;
+  min-height: 1px;
+  border: 0;
+  background: transparent;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.graphNodeHandle.react-flow__handle-top {
+  top: -14px;
+}
+
+.graphNodeHandle.react-flow__handle-right {
+  right: -14px;
+}
+
+.graphNodeHandle.react-flow__handle-bottom {
+  bottom: -14px;
+}
+
+.graphNodeHandle.react-flow__handle-left {
+  left: -14px;
+}
+
+.graphNode--far .graphNodeDot {
+  width: 8px;
+  height: 8px;
+}
+
+.graphNodeFarLabel {
+  position: absolute;
+  top: 17px;
+  left: 50%;
+  width: max-content;
+  max-width: 180px;
+  padding: 5px 8px 6px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  background: #1f1f1f;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  line-height: 1.2;
+  opacity: 0;
+  pointer-events: none;
+  text-overflow: ellipsis;
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+  transform: translateX(-50%) translateY(-4px);
+  white-space: nowrap;
+  z-index: var(--z-tooltip);
+}
+
+.graphNode--far:hover .graphNodeFarLabel,
+.graphNode--far.isSelected .graphNodeFarLabel,
+.graphNode--far.isFocused .graphNodeFarLabel,
+.graphNode--far.isPinned .graphNodeFarLabel,
+.graphNode--far.showsLabel .graphNodeFarLabel {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.graphNode:hover,
+.graphNode:focus-visible {
+  border-color: rgba(255, 255, 255, 0.56);
+  outline: none;
+}
+
+.graphNode.isSelected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16), 0 24px 60px rgba(0, 0, 0, 0.32);
+}
+
+.graphNode.isNeighbor {
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 18px 52px rgba(0, 0, 0, 0.26);
+}
+
+.graphNode.isDimmed {
+  opacity: 0.34;
+}
+
+.graphNode.isDimmed:hover,
+.graphNode.isDimmed:focus-visible {
+  opacity: 0.76;
+}
+
+.graphNode--far.isSelected,
+.graphNode--far.isNeighbor,
+.graphNode--far.isFocused,
+.graphNode--far.isPinned {
+  border-color: rgba(255, 255, 255, 0.36);
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.07);
+}
+
+.graphNode--far.isNeighbor .graphNodeDot {
+  background: #f4f4f4;
+  box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.08), 0 0 26px rgba(255, 255, 255, 0.28);
+}
+
+.graphNode.isPinned {
+  border-color: rgba(210, 210, 210, 0.58);
+}
+
+.graphNode.isFocused {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.26), 0 18px 48px rgba(0, 0, 0, 0.24);
+}
+
+.graphNodeTopline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.graphNodeTopline button,
+.nodeFocusToggle {
+  display: grid;
+  width: 26px;
+  height: 24px;
+  min-width: 26px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+}
+
+.nodeFocusCheckIcon {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+}
+
+.graphNodeTopline button:hover,
+.graphNodeTopline button:focus-visible,
+.graphNodeTopline button.isActive,
+.nodeFocusToggle:hover,
+.nodeFocusToggle:focus-visible,
+.nodeFocusToggle.isActive {
+  border-color: rgba(255, 255, 255, 0.44);
+  color: var(--accent);
+  outline: none;
+}
+
+.graphNode--mid .nodeFocusToggle {
+  width: 22px;
+  min-width: 22px;
+  height: 22px;
+  min-height: 22px;
+  border-radius: 999px;
+}
+
+.nodeType {
+  color: var(--accent-soft);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+}
+
+.graphNode strong {
+  font-size: var(--text-base);
+  line-height: var(--line-heading);
+}
+
+.graphNode--mid strong {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--text-xs);
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.graphNode--near > span:not(.nodeType) {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: var(--line-ui);
+}

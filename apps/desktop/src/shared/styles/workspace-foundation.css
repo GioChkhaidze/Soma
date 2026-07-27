@@ -1,0 +1,43 @@
+.navItem,
+.sidebarToggle,
+.sidebarDetailHeader button,
+.workspaceActions button,
+.workspaceInlineAction button,
+.searchClear,
+.sidebarSettings button,
+.reviewFilters button,
+.reviewUpdateRow,
+.reviewActions button,
+.jobRunRow,
+.jobRunActions button,
+.modeButtons button,
+.pinButton,
+.graphNode,
+.graphNodeTopline button,
+.nodeFocusToggle,
+.relatedNodeList button,
+.searchResults button,
+.documentActions button,
+.nodeBodyEditorActions button,
+.versionList button,
+.nodeChatActions button,
+.graphChatSendButton,
+.graphChatAreas button {
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+  white-space: nowrap;
+}

@@ -1,0 +1,388 @@
+.appShell {
+  display: grid;
+  grid-template-columns: 68px minmax(420px, 1fr);
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+  padding: var(--space-4);
+  gap: var(--space-4);
+}
+
+.appShell.hasDocumentPanel {
+  --document-panel-width: max(360px, 34vw);
+  grid-template-columns: 68px minmax(420px, 1fr) minmax(360px, 34vw);
+}
+
+.appShell.isSidebarCollapsed {
+  grid-template-columns: minmax(420px, 1fr);
+}
+
+.appShell.isSidebarCollapsed.hasDocumentPanel {
+  grid-template-columns: minmax(420px, 1fr) minmax(360px, 34vw);
+}
+
+.workspaceSidebar,
+.graphWorkspace,
+.nodeInspector,
+.statusDock {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow-panel);
+}
+
+.workspaceSidebar {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  min-height: 0;
+  overflow: visible;
+  overflow-y: visible;
+  padding: 12px 10px;
+  border-radius: var(--radius-lg);
+  background: #090909;
+  transition:
+    opacity var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-out);
+  will-change: opacity, transform;
+  z-index: var(--z-control);
+}
+
+.appShell.isSidebarCollapsed .workspaceSidebar {
+  position: fixed;
+  left: var(--space-4);
+  top: var(--space-4);
+  bottom: var(--space-4);
+  width: 68px;
+  transform: translateX(calc(-100% - var(--space-4)));
+  opacity: 0;
+  pointer-events: none;
+  z-index: var(--z-control);
+}
+
+.appShell.isSidebarCollapsed .workspaceShell {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.appShell.isSidebarCollapsed .nodeInspector {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.sidebarToggle {
+  position: fixed;
+  left: calc(var(--space-4) + 72px);
+  top: 20px;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: rgba(8, 8, 8, 0.78);
+  color: var(--muted);
+  cursor: pointer;
+  z-index: var(--z-control);
+}
+
+.appShell.isSidebarCollapsed .sidebarToggle {
+  left: var(--space-4);
+}
+
+@media (min-width: 761px) {
+  .appShell.isSidebarCollapsed .workspaceHeader,
+  .appShell.isSidebarCollapsed .paperToolbar {
+    padding-left: 52px;
+  }
+}
+
+.sidebarToggle::after,
+.navItem::after,
+.sidebarSettings button::after {
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  display: block;
+  max-width: 180px;
+  padding: 5px 8px 6px;
+  transform: translateY(-50%) translateX(-4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  background: #1f1f1f;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
+  color: var(--text);
+  content: attr(aria-label);
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  line-height: 1.2;
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: var(--z-tooltip);
+}
+
+.sidebarToggle:hover::after,
+.sidebarToggle:focus-visible::after,
+.navItem:hover::after,
+.navItem:focus-visible::after,
+.sidebarSettings button:hover::after,
+.sidebarSettings button:focus-visible::after {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+.sidebarToggle:hover,
+.sidebarToggle:focus-visible {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  outline: none;
+}
+
+.navItem:not(.isUnavailable):hover,
+.navItem:not(.isUnavailable):focus-visible {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text);
+  outline: none;
+}
+
+.sidebarToggleIcon {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.brandBlock {
+  display: grid;
+  place-items: center;
+  padding: 0 0 4px;
+}
+
+.brandMark {
+  flex: 0 0 auto;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-md);
+  background: #000 url('../../assets/soma-mark.png') center / cover no-repeat;
+}
+
+.brandBlock h1,
+.brandBlock p {
+  margin: 0;
+}
+
+.brandBlock h1 {
+  color: var(--text-strong);
+  font-size: 1rem;
+  font-weight: var(--weight-bold);
+  line-height: 1.1;
+}
+
+.brandBlock p {
+  margin-top: 3px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.25;
+}
+
+.workspaceHeader h2,
+.workspaceHeader p,
+.documentHeader h2,
+.documentHeader p {
+  margin: 0;
+}
+
+.navList {
+  display: grid;
+  justify-content: center;
+  gap: 9px;
+  padding: 10px 0;
+}
+
+.navItem {
+  position: relative;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  min-height: 38px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.navItem.isUnavailable,
+.navItem:disabled {
+  cursor: default;
+  opacity: 0.42;
+}
+
+.navItem.isActive {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+.navIcon {
+  width: 19px;
+  height: 19px;
+  color: currentColor;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.75;
+}
+
+.navBadge {
+  position: absolute;
+  right: -4px;
+  top: -4px;
+  display: grid;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  place-items: center;
+  border: 1px solid rgba(5, 5, 5, 0.92);
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--bg);
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  line-height: 1;
+}
+
+.sidebarDetailPanel {
+  position: fixed;
+  left: calc(var(--space-4) + 68px + var(--space-3));
+  top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  width: min(360px, calc(100vw - 116px));
+  max-height: calc(100dvh - 32px);
+  min-height: 0;
+  overflow: hidden;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.085);
+  border-radius: var(--radius-lg);
+  background: #0a0a0a;
+  box-shadow: 0 18px 56px rgba(0, 0, 0, 0.42);
+  z-index: var(--z-control);
+}
+
+.sidebarDetailHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebarDetailHeader span {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+}
+
+.sidebarDetailHeader h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: var(--weight-semibold);
+  line-height: var(--line-heading);
+}
+
+.sidebarDetailHeader button {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.sidebarDetailHeader button:hover,
+.sidebarDetailHeader button:focus-visible {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text);
+  outline: none;
+}
+
+.closeIcon {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+}
+
+.panelEmpty {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: var(--line-ui);
+}
+
+.sidebarDetailPanel > .sidebarSearch,
+.sidebarDetailPanel > .workspaceImportPanel,
+.sidebarDetailPanel > .jobRunsPanel,
+.sidebarDetailPanel > .reviewTray {
+  flex: 1 1 auto;
+  align-content: start;
+  min-height: 0;
+  overflow: auto;
+  padding-top: 14px;
+}
+
+.sidebarSettings {
+  display: flex;
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.sidebarSettings button {
+  position: relative;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.sidebarSettings button:hover,
+.sidebarSettings button:focus-visible,
+.sidebarSettings button.isActive {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text);
+  outline: none;
+}

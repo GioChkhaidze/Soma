@@ -1,0 +1,42 @@
+﻿* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  text-rendering: optimizeLegibility;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+button {
+  font: inherit;
+}
+
+.startupStatus {
+  display: grid;
+  min-height: 100%;
+  place-content: center;
+  gap: var(--space-2);
+  color: var(--muted);
+  text-align: center;
+}
+
+.startupStatus strong {
+  color: var(--text);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+}
+
+.startupStatus span {
+  font-size: var(--text-sm);
+}
+

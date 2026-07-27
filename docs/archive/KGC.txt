@@ -1,0 +1,62 @@
+SOMA EARLY KNOWLEDGE-GRAPH CONCEPT
+
+Status
+
+This file summarizes the first product exploration. It is not a current architecture
+document.
+
+Core thesis
+
+Chronological conversations do not preserve complex mental models. A useful system
+must compile conversation content into visible and reusable structure.
+
+Early product ideas
+
+1. Compile multiple conversations into shared semantic objects.
+2. Show tree, hybrid, and graph projections.
+3. Keep node positions stable when new data arrives.
+4. Use graph neighborhoods as AI context.
+5. Let users continue a conversation from a graph node.
+6. Preserve source links for all accepted graph content.
+
+Early risks
+
+- Model extraction can create unsupported structure.
+- Dense graphs can cause cognitive overload.
+- Continuous model calls can increase cost.
+- Browser-page capture can be fragile.
+- Automatic merging can remove important distinctions.
+
+Early stack alternatives
+
+The research considered:
+
+- a browser extension
+- a hosted web application
+- Neo4j and Graphiti
+- a separate vector database
+- FastAPI and background workers
+- local Python with NetworkX and SQLite
+- command-line workflows with Codex or Claude Code
+- MCP as a later integration
+
+Current resolution
+
+Soma v0 uses a local Tauri desktop application, Rust, React, React Flow, SQLite, and
+FTS5.
+
+It does not use Neo4j, Graphiti, a browser extension, or a separate vector database.
+
+AI runtimes return a validated GraphPatch. Providers cannot change accepted graph data
+directly.
+
+Current authority
+
+Read docs/architecture/README.md and docs/decisions/.
+
+Early reference links
+
+https://neo4j.com/labs/genai-ecosystem/llm-graph-builder/
+https://thinkmachine.com/
+https://www.getzep.com/platform/graphiti/
+https://knowtree.chat/

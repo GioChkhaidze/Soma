@@ -1,0 +1,33 @@
+@import "../../shared/styles/app-shell-settings.css";
+
+.aiProviderOption,
+.aiSettingsFooter button,
+.settingsSectionRail button {
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+@media (max-width: 760px) {
+  .sidebarDetailPanel.isSettingsPanel {
+    width: auto;
+  }
+
+  .settingsPanel {
+    grid-template-columns: 1fr;
+  }
+
+  .settingsSectionRail {
+    position: static;
+  }
+
+  .aiRuntimeDetails {
+    grid-template-columns: 1fr;
+  }
+
+  .aiSettingsFooter {
+    grid-template-columns: 1fr;
+  }
+}

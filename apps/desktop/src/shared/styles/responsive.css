@@ -1,0 +1,184 @@
+﻿@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
+
+  .graphChatTranscript {
+    transform: none;
+    transition-delay: 0s !important;
+  }
+}
+
+@media (max-width: 1180px) {
+  .appShell {
+    grid-template-columns: 68px minmax(360px, 1fr);
+  }
+
+  .statusDock {
+    width: min(760px, calc(100vw - 36px));
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1180px) {
+  .appShell.hasDocumentPanel {
+    --document-panel-width: max(300px, 38vw);
+    grid-template-columns: 68px minmax(280px, 1fr) minmax(300px, 38vw);
+  }
+
+  .appShell.isSidebarCollapsed.hasDocumentPanel {
+    grid-template-columns: minmax(280px, 1fr) minmax(300px, 38vw);
+  }
+
+  .appShell.hasDocumentPanel:not(.isSidebarCollapsed) .nodeInspector {
+    grid-column: 3;
+    grid-row: 1;
+  }
+}
+
+@media (max-width: 760px) {
+  .appShell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    padding: 10px;
+  }
+
+  .appShell.hasDocumentPanel {
+    grid-template-columns: 1fr;
+  }
+
+  .workspaceShell,
+  .nodeInspector,
+  .statusDock {
+    grid-column: 1;
+  }
+
+  .workspaceSidebar {
+    grid-column: 1;
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) 36px;
+    align-items: center;
+    gap: 6px;
+    min-height: 56px;
+    padding: 7px;
+    border-radius: var(--radius-lg);
+  }
+
+  .appShell.isSidebarCollapsed .workspaceSidebar {
+    position: relative;
+    left: auto;
+    top: auto;
+    bottom: auto;
+    width: auto;
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .sidebarToggle {
+    display: none;
+  }
+
+  .brandBlock {
+    padding: 0;
+  }
+
+  .brandMark {
+    width: 38px;
+    height: 38px;
+  }
+
+  .navList {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    min-width: 0;
+    padding: 0;
+  }
+
+  .navItem,
+  .sidebarSettings button {
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+  }
+
+  .sidebarSettings {
+    margin-top: 0;
+    padding-top: 0;
+    justify-content: flex-end;
+  }
+
+  .navItem::after,
+  .sidebarSettings button::after {
+    display: none;
+  }
+
+  .sidebarDetailPanel {
+    left: 10px;
+    right: 10px;
+    top: 78px;
+    width: auto;
+    max-height: calc(100dvh - 98px);
+  }
+
+  .graphWorkspace {
+    min-height: 620px;
+  }
+
+  .workspaceHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .projectionControls {
+    justify-content: stretch;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .graphNode {
+    width: min(235px, 72vw);
+  }
+
+  .graphNode--far {
+    width: 18px;
+  }
+
+  .graphNode--mid {
+    width: max-content;
+    max-width: min(190px, 72vw);
+  }
+
+  .documentHeader,
+  .compiledBody,
+  .nodeBodyEditor {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .relatedNodesPanel,
+  .evidenceBlock {
+    margin-left: 20px;
+    margin-right: 20px;
+  }
+
+  .evidenceDrawer {
+    margin-left: 20px;
+    margin-right: 20px;
+  }
+
+  .statusDock {
+    position: static;
+    width: 100%;
+  }
+
+  .graphChatForm {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+}

@@ -1,0 +1,76 @@
+name: Verify
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux
+            os: ubuntu-22.04
+            bundle-script: desktop:build:linux
+          - name: macOS
+            os: macos-latest
+            bundle-script: desktop:build:macos
+          - name: Windows
+            os: windows-latest
+            bundle-script: desktop:build:windows
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux desktop dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            file \
+            libayatana-appindicator3-dev \
+            libfuse2 \
+            libgtk-3-dev \
+            librsvg2-dev \
+            libssl-dev \
+            libwebkit2gtk-4.1-dev \
+            patchelf
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@1.92.0
+        with:
+          components: clippy, rustfmt
+
+      - run: npm ci
+
+      - name: Install Chromium and Linux browser dependencies
+        if: runner.os == 'Linux'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Chromium
+        if: runner.os != 'Linux'
+        run: npx playwright install chromium
+
+      - run: npm run verify
+
+      - name: Build native bundle
+        if: runner.os != 'macOS'
+        run: npm run ${{ matrix.bundle-script }}
+
+      - name: Build native bundle
+        if: runner.os == 'macOS'
+        run: npm run ${{ matrix.bundle-script }}
+        env:
+          APPLE_SIGNING_IDENTITY: "-"

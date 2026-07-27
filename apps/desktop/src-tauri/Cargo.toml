@@ -1,0 +1,28 @@
+[package]
+name = "soma-desktop"
+version = "0.1.0"
+description = "Soma desktop shell"
+authors = ["Soma"]
+edition = "2021"
+license = "Apache-2.0"
+
+[lib]
+name = "soma_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+rusqlite = { version = "0.37.0", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+soma-ai-runtime = { path = "../../../crates/ai-runtime" }
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2.7.1"
+time = { version = "0.3.51", features = ["formatting"] }
+uuid = { version = "1.23.4", features = ["v4"] }
+
+[target.'cfg(any(target_os = "macos", target_os = "linux"))'.dependencies.fix-path-env]
+git = "https://github.com/tauri-apps/fix-path-env-rs"
+rev = "c4c45d503ea115a839aae718d02f79e7c7f0f673"

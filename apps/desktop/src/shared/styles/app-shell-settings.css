@@ -1,0 +1,642 @@
+.sidebarDetailPanel.isSettingsPanel {
+  width: min(760px, calc(100vw - 116px));
+}
+
+.sidebarDetailPanel > .settingsPanel {
+  flex: 1 1 auto;
+  align-content: start;
+  min-height: 0;
+  overflow: auto;
+  padding-top: 14px;
+}
+
+.settingsPanel {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+  padding-right: 2px;
+}
+
+.settingsPanel p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: var(--line-ui);
+}
+
+.settingsSectionRail {
+  position: sticky;
+  top: 0;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.settingsSectionRail button {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 10px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  cursor: default;
+  text-align: left;
+}
+
+.settingsSectionRail--families button {
+  cursor: pointer;
+}
+
+.settingsSectionRail button.isActive,
+.settingsSectionRail button:focus-visible {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.085);
+  outline: none;
+}
+
+.settingsSectionRail button.hasSelection small {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.settingsSectionRail button span {
+  color: var(--text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: 1.2;
+}
+
+.settingsSectionRail button small {
+  color: var(--muted);
+  font-size: var(--text-2xs);
+  line-height: 1.35;
+}
+
+.settingsContent {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.settingsIntro {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.settingsIntro span,
+.aiRuntimeSummary span,
+.aiRuntimeDetails label > span,
+.aiRuntimeModelField > span,
+.settingsSubhead h4 {
+  color: rgba(255, 255, 255, 0.5);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.settingsIntro h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--text-panel-title);
+  font-weight: var(--weight-semibold);
+  line-height: var(--line-heading);
+}
+
+.settingsIntro p,
+.aiSettingsFooter p,
+.settingsSubhead p,
+.settingsNotice {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: var(--line-ui);
+}
+
+.settingsSubhead {
+  display: grid;
+  gap: 4px;
+}
+
+.settingsSubhead h4 {
+  margin: 0;
+}
+
+.aiRuntimeSummary {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 10px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.aiRuntimeSummary strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: var(--text-ui);
+  font-weight: var(--weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aiRuntimeSummary small,
+.aiProviderBody small {
+  color: rgba(255, 255, 255, 0.52);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.aiRuntimeSummary .aiRuntimeCredentialCue {
+  color: rgba(255, 255, 255, 0.62);
+  text-transform: none;
+}
+
+.aiRuntimeSummary .aiRuntimeCredentialCue.is-ready {
+  color: rgba(178, 232, 192, 0.86);
+}
+
+.aiRuntimeSummary .aiRuntimeCredentialCue.is-missing {
+  color: rgba(255, 210, 154, 0.9);
+}
+
+.brainConfiguration,
+.brainRuntimePicker {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.aiProviderDrawer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.aiProviderSearchRow {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.aiProviderSearchRow span {
+  color: rgba(255, 255, 255, 0.62);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+}
+
+.aiProviderSearchRow input {
+  width: 100%;
+  min-height: 34px;
+  padding: 0 9px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  outline: none;
+}
+
+.aiProviderSearchRow input:focus {
+  border-color: rgba(255, 255, 255, 0.42);
+}
+
+.aiProviderEmpty {
+  grid-column: 1 / -1;
+}
+
+.aiProviderOption {
+  display: grid;
+  gap: 0;
+  align-items: start;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.026);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.aiProviderOption:hover,
+.aiProviderOption:focus-within,
+.aiProviderOption.isSelected {
+  border-color: rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.aiProviderOption:focus-visible {
+  border-color: rgba(255, 255, 255, 0.42);
+  outline: none;
+}
+
+.aiProviderOption input {
+  width: 13px;
+  height: 13px;
+  margin: 4px 0 0;
+  accent-color: var(--accent);
+}
+
+.aiProviderBody {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.aiProviderTopline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.aiProviderTopline strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aiProviderTopline em {
+  flex: 0 0 auto;
+  color: rgba(255, 255, 255, 0.56);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-style: normal;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.aiProviderBody > span:not(.aiProviderTopline) {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: var(--line-ui);
+}
+
+.aiRuntimeDetails {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.aiRuntimeDetails label,
+.aiRuntimeModelField,
+.aiRuntimeSecretField {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.aiRuntimeWide {
+  grid-column: 1 / -1;
+}
+
+.aiRuntimeDetails label input:not([type="checkbox"]),
+.aiRuntimeSecretInput input,
+.aiRuntimeModelField input {
+  width: 100%;
+  min-height: 34px;
+  padding: 0 9px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  outline: none;
+}
+
+.aiRuntimeModelSearchRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  min-width: 0;
+}
+
+.aiRuntimeSecretField {
+  grid-column: span 1;
+}
+
+.aiRuntimeSecretInput {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  min-width: 0;
+}
+
+.aiRuntimeModelSearchRow button,
+.aiRuntimeSecretInput button {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.075);
+  color: var(--text);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.aiRuntimeModelSearchRow button:disabled,
+.aiRuntimeSecretInput button:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.aiRuntimeSecretInput button:disabled {
+  cursor: default;
+}
+
+.aiRuntimeSecretField small {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: var(--line-ui);
+}
+
+.aiRuntimeSelectedModel {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.aiRuntimeSelectedModel span {
+  color: rgba(255, 255, 255, 0.48);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+}
+
+.aiRuntimeSelectedModel strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aiRuntimeSelectedModel small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: var(--line-ui);
+  text-overflow: ellipsis;
+}
+
+.aiModelOptionLimit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: var(--line-ui);
+}
+
+.aiModelOptionLimit span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aiModelOptionLimit button {
+  flex: 0 0 auto;
+  min-height: 30px;
+  padding: 0 9px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.aiModelOptionLimit button:hover,
+.aiModelOptionLimit button:focus-visible {
+  border-color: rgba(255, 255, 255, 0.42);
+  outline: none;
+}
+
+.aiModelOptionList {
+  display: grid;
+  gap: 5px;
+  max-height: 260px;
+  min-width: 0;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.aiModelOption {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.026);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.aiModelOption:hover,
+.aiModelOption:focus-visible,
+.aiModelOption.isSelected {
+  border-color: rgba(255, 255, 255, 0.26);
+  background: rgba(255, 255, 255, 0.06);
+  outline: none;
+}
+
+.aiModelOption span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.aiModelOption strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aiModelOption small {
+  overflow: hidden;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aiModelOption em {
+  color: rgba(255, 255, 255, 0.56);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-style: normal;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.aiModelEmpty {
+  padding: 8px 0;
+}
+
+.aiProviderEmpty {
+  margin: 0;
+  padding: 8px 0;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: var(--line-ui);
+}
+
+.aiRuntimeDetails input:focus,
+.aiRuntimeSecretInput button:hover,
+.aiRuntimeSecretInput button:focus-visible,
+.aiRuntimeDetails select:focus {
+  border-color: rgba(255, 255, 255, 0.42);
+  outline: none;
+}
+
+.aiRuntimeAction {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding-top: 4px;
+}
+
+.aiRuntimeAction button {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.075);
+  color: var(--text);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.aiRuntimeAction button:hover,
+.aiRuntimeAction button:focus-visible {
+  border-color: rgba(255, 255, 255, 0.42);
+  outline: none;
+}
+
+.aiRuntimeAction small {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: var(--line-ui);
+}
+
+.aiRuntimeSecretClear {
+  grid-column: 1 / -1;
+  grid-template-columns: 16px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+
+.aiRuntimeAdvanced {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.aiRuntimeAdvanced label {
+  margin-top: 8px;
+}
+
+.aiRuntimeAdvanced summary {
+  width: max-content;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.52);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+}
+
+.aiRuntimeSecretClear input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.aiSettingsFooter {
+  position: sticky;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  margin-top: 2px;
+  padding: 11px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(to bottom, rgba(10, 10, 10, 0.88), #0a0a0a 42%);
+}
+
+.aiSettingsFooter button {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.aiSettingsFooter button:hover,
+.aiSettingsFooter button:focus-visible {
+  border-color: rgba(255, 255, 255, 0.42);
+  outline: none;
+}
+
+.settingsNotice {
+  padding: 8px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+}
