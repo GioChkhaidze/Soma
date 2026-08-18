@@ -22,14 +22,14 @@
 
 <p align="center">
   <img
-    src="docs/assets/readme/paper-context.png"
-    alt="A paper in Soma with retained selection and contextual chat"
+    src="docs/assets/readme/tiny-recursive-model-paper.png"
+    alt="The Less is More: Recursive Reasoning with Tiny Networks paper in Soma with contextual chat"
     width="100%"
   />
 </p>
 
 <p align="center">
-  <sub>Soma uses the current page and the retained selection as question context.</sub>
+  <sub>Soma keeps the current page and selection attached to questions about Tiny Recursive Models.</sub>
 </p>
 
 ### Read a paper
@@ -55,14 +55,14 @@ Opening or reading a paper does not create graph data.
 
 <p align="center">
   <img
-    src="docs/assets/readme/graph-workspace.png"
-    alt="The Soma graph with an evidence-backed node in the inspector"
+    src="docs/assets/readme/tiny-recursive-model-graph.png"
+    alt="A connected Soma graph of the Tiny Recursive Model refinement loop"
     width="100%"
   />
 </p>
 
 <p align="center">
-  <sub>The graph card and the node document are two views of the same accepted data.</sub>
+  <sub>The paper, shared network, recursive state updates, deep supervision, and results stay connected.</sub>
 </p>
 
 ### Build reusable knowledge

@@ -14,6 +14,7 @@ test-results/
 playwright-report/
 blob-report/
 output/
+archive/
 *.log
 npm-debug.log*
 yarn-debug.log*
