@@ -65,8 +65,25 @@ export function filterModelOptions(models: AiModelOption[], query: string, limit
 
 export function aiSettingsSummary(settings: AiSettingsDraft) {
   const provider = providerById(settings.providerId);
-  const model = settings.model.trim() || provider.modelPlaceholder;
-  return `${provider.name} / ${model}`;
+  const model = effectiveBrainModel(settings) || provider.modelPlaceholder;
+  return `${model} with ${provider.name}`;
+}
+export function effectiveBrainModel(settings: AiSettingsDraft) {
+  return settings.model.trim() || settings.effectiveModel?.trim() || '';
+}
+
+export function activeBrainLabel(settings: AiSettingsDraft | null) {
+  if (!settings) return 'Loading Brain';
+  const provider = providerById(settings.providerId);
+  const model = effectiveBrainModel(settings);
+  return model ? `${provider.shortName} · ${model}` : provider.shortName;
+}
+
+export function activeBrainEffort(settings: AiSettingsDraft | null, capturesGraph: boolean) {
+  if (!settings || settings.providerId !== 'codex_sdk') return null;
+  return capturesGraph
+    ? settings.graphReasoningEffort ?? 'xhigh'
+    : settings.defaultReasoningEffort ?? 'medium';
 }
 
 export function activeCredentialCue(settings: AiSettingsDraft, credentialLabel?: string): AiCredentialCue {

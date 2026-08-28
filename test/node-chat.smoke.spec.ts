@@ -72,7 +72,7 @@ test('node chat shares capture state and routes backend-authoritative undo', asy
   await expect(undo).toHaveCount(0);
 });
 
-test('node chat stays busy and blocks duplicate sends until the invoke settles', async ({ page }) => {
+test('node chat shows its Brain and accepts the next draft while blocking duplicate sends', async ({ page }) => {
   await installNodeCaptureUndoMock(page, { deferNodeChatTurn: true });
   await page.goto('/');
 
@@ -84,12 +84,16 @@ test('node chat stays busy and blocks duplicate sends until the invoke settles',
   await composer.press('Enter');
 
   await expect(nodeChat.getByRole('button', { name: 'Thinking' })).toBeDisabled();
-  await expect(composer).toBeDisabled();
+  await expect(composer).toBeEnabled();
+  await expect(nodeChat.getByRole('status')).toContainText('Running Codex · gpt-5.6-luna');
+  await expect(nodeChat.getByRole('status')).toContainText('medium');
+  await expect(nodeChat.getByRole('button', { name: 'Stop' })).toBeVisible();
   await expect(nodeChat.getByText('Thinking...')).toBeVisible();
   await expect.poll(() => page.evaluate(() => (
     globalThis as typeof globalThis & NodeChatTestState
   ).__nodeChatCallCount)).toBe(1);
 
+  await composer.fill('The next turn is ready.');
   await nodeChat.locator('form').evaluate((form) => {
     (form as HTMLFormElement).requestSubmit();
   });
@@ -103,8 +107,7 @@ test('node chat stays busy and blocks duplicate sends until the invoke settles',
 
   await expect(nodeChat.getByText('The graph was left unchanged.')).toBeVisible();
   await expect(composer).toBeEnabled();
-  await expect(nodeChat.getByRole('button', { name: 'Send' })).toBeDisabled();
-  await composer.fill('The next turn is ready.');
+  await expect(composer).toHaveValue('The next turn is ready.');
   await expect(nodeChat.getByRole('button', { name: 'Send' })).toBeEnabled();
 });
 
@@ -148,8 +151,8 @@ async function installDelayedNodeHistoryMock(page: Page) {
       ...canvasNode,
       compiled_body: 'Node chat history must not replace newer composer state.',
       evidence: [],
-      body_sections: [],
-      update_history: []
+      update_history: [],
+      relations: { items: [], is_partial: false }
     };
     let resolveHistory: ((messages: unknown[]) => void) | null = null;
     const history = new Promise<unknown[]>((resolve) => {
@@ -232,8 +235,8 @@ async function installNodeCaptureUndoMock(
       ...canvasNode,
       compiled_body: 'Node capture and undo share the graph-chat mutation authority.',
       evidence: [],
-      body_sections: [],
-      update_history: []
+      update_history: [],
+      relations: { items: [], is_partial: false }
     };
     const canvas = {
       schema_version: 1,

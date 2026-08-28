@@ -112,7 +112,9 @@ export function useBrainSettingsController() {
         providerId: 'codex_sdk',
         model: requestedDraft.model,
         endpoint: '',
-        authProfile: requestedDraft.authProfile
+        authProfile: requestedDraft.authProfile,
+        defaultReasoningEffort: requestedDraft.defaultReasoningEffort ?? 'medium',
+        graphReasoningEffort: requestedDraft.graphReasoningEffort ?? 'xhigh'
       });
       if (request.write !== writeRevisionRef.current) return;
       if (result.settings) {
@@ -139,6 +141,7 @@ export function useBrainSettingsController() {
 
   return {
     draft,
+    activeSettings,
     notice,
     setupMessage: activeSettings ? brainSetupIssue(activeSettings)?.message ?? null : null,
     updateDraft,
@@ -156,6 +159,8 @@ async function persistSettings(draft: AiSettingsDraft, secretInput?: BrainSettin
     model: draft.model,
     endpoint: draft.endpoint,
     authProfile: draft.authProfile,
+    defaultReasoningEffort: draft.defaultReasoningEffort ?? 'medium',
+    graphReasoningEffort: draft.graphReasoningEffort ?? 'xhigh',
     apiKey: secretInput?.apiKey,
     clearApiKey: secretInput?.clearApiKey
   });

@@ -79,12 +79,6 @@ export type EvidenceRecord = {
   source?: SourceRef;
 };
 
-export type NodeBodySection = {
-  id: string;
-  index: number;
-  content: string;
-};
-
 export type NodeBodyVersion = {
   id: string;
   version_number: number;
@@ -95,39 +89,37 @@ export type NodeBodyVersion = {
   evidence?: EvidenceRecord[];
 };
 
-export type GraphNode = {
+export type GraphCanvasNode = {
   id: string;
   type: GraphNodeType | string;
   title: string;
   preview: string;
-  compiled_body: string;
   source_chunk_ids: string[];
   body_version: number;
   body_version_id?: string;
-  body_max_words?: number;
   status: GraphTruthStatus;
   markers: TrustMarker[];
-  evidence: EvidenceRecord[];
-  body_sections: NodeBodySection[];
-  update_history: NodeBodyVersion[];
   created_at?: string;
   updated_at?: string;
 };
 
-export type GraphCanvasNode = Pick<
-  GraphNode,
-  | 'id'
-  | 'type'
-  | 'title'
-  | 'preview'
-  | 'source_chunk_ids'
-  | 'body_version'
-  | 'body_version_id'
-  | 'status'
-  | 'markers'
-  | 'created_at'
-  | 'updated_at'
->;
+export type GraphNodeRelation = {
+  edge_id: string;
+  type: GraphEdgeType | string;
+  direction: 'outgoing' | 'incoming';
+  bridge_text: string;
+  neighbor: Pick<GraphCanvasNode, 'id' | 'title'>;
+};
+
+export type GraphNodeDetail = GraphCanvasNode & {
+  compiled_body: string;
+  evidence: EvidenceRecord[];
+  update_history: NodeBodyVersion[];
+  relations: {
+    items: GraphNodeRelation[];
+    is_partial: boolean;
+  };
+};
 
 export type GraphEdge = {
   id: string;

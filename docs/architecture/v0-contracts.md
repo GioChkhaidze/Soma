@@ -191,9 +191,16 @@ truth.
 ## Canvas and detail
 
 `GraphCanvasSnapshot` is a bounded accepted-graph read model. Canvas nodes do not
-contain complete bodies, sections, evidence, or history.
+contain complete bodies, evidence, history, or node-detail relationships.
 
-`load_graph_node_detail` returns these fields for one selected node.
+`load_graph_node_detail` returns the selected node's `GraphNodeDetail`.
+
+It contains the full body, evidence, version history, and bounded `relations`.
+
+Each relation carries canonical edge type and direction relative to the selected
+node. It also carries normalized bridge text and the neighbor's id and title.
+
+`relations.is_partial` is true when more active relationships exist.
 
 Canvas snapshots do not contain review, chat, projection, or layout state.
 `GraphWorkspaceBootstrap` pairs canvas and layout data without changing ownership.
@@ -241,8 +248,15 @@ Brain settings contain:
 - model
 - endpoint
 - optional Codex profile
+- chat reasoning effort
+- graph reasoning effort
 - redacted credential status
 - update time
+
+Codex defaults to Luna with medium effort for ordinary chat and xhigh effort for
+graph capture and compile. Brain Settings can change the model and either effort as
+one saved policy. Invalid or absent effort values fall back to those defaults.
+
 
 Compile jobs always keep their job folders. Soma ignores legacy folder-preference
 settings.

@@ -127,6 +127,8 @@ export const BRAIN_PROVIDER_IDS = [
 ] as const;
 
 export type BrainProviderId = typeof BRAIN_PROVIDER_IDS[number];
+export const BRAIN_REASONING_EFFORTS = ['none', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
+export type BrainReasoningEffort = typeof BRAIN_REASONING_EFFORTS[number];
 
 export type BrainSettings = {
   providerId: BrainProviderId;
@@ -135,6 +137,10 @@ export type BrainSettings = {
   authProfile: string;
   credentialConfigured: boolean;
   updatedAt?: string | null;
+  effectiveModel?: string;
+  modelSource?: 'selected' | 'soma_default';
+  defaultReasoningEffort?: BrainReasoningEffort | null;
+  graphReasoningEffort?: BrainReasoningEffort | null;
 };
 
 export type BrainRuntimeStatus = {
@@ -159,6 +165,11 @@ export type SaveBrainSettingsInput = Omit<BrainSettings, 'credentialConfigured' 
 };
 
 export type ListBrainModelsInput = SaveBrainSettingsInput;
+
+export type CancelChatTurnResult = {
+  requestId: string;
+  cancelled: boolean;
+};
 
 export type CreateGraphExtractionJobResult = {
   jobId: string;

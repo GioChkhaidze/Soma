@@ -1,0 +1,79 @@
+.brainRunStatus {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  line-height: 1;
+}
+
+.brainRunSignal {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: rgba(142, 160, 187, 0.68);
+}
+
+.brainRunStatus.isActive .brainRunSignal {
+  background: #8db1ff;
+  box-shadow: 0 0 0 4px rgba(111, 153, 238, 0.12);
+  animation: brainRunPulse 1.4s ease-in-out infinite;
+}
+
+.brainRunIdentity {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.brainRunIdentity strong {
+  color: var(--text);
+  font-weight: var(--weight-medium);
+}
+
+.brainRunEffort {
+  flex: 0 0 auto;
+  padding: 3px 5px;
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  border-radius: 999px;
+  color: rgba(179, 203, 249, 0.88);
+  text-transform: uppercase;
+}
+
+.brainRunStatus time {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.brainRunStatus button {
+  min-height: 26px;
+  margin-left: auto;
+  padding: 0 8px;
+  border: 1px solid rgba(213, 108, 108, 0.32);
+  border-radius: var(--radius-sm);
+  background: rgba(150, 57, 57, 0.09);
+  color: rgba(223, 139, 139, 0.95);
+  cursor: pointer;
+  font: inherit;
+}
+
+.brainRunStatus button:hover,
+.brainRunStatus button:focus-visible {
+  border-color: rgba(226, 125, 125, 0.62);
+  outline: none;
+}
+
+.brainRunStatus button:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+@keyframes brainRunPulse {
+  50% {
+    opacity: 0.48;
+  }
+}

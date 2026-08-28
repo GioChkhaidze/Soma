@@ -1,5 +1,6 @@
 import type {
   ClearJobHistoryResult,
+  CancelChatTurnResult,
   CompileGraphWorkspaceResult,
   GraphCanvasNode,
   GraphCanvasSnapshot,
@@ -26,10 +27,15 @@ const WORKSPACE_BOOTSTRAP_CLIENT_TIMEOUT_MS = 1_800;
 
 const graphChatTurnArgsSchema = contractSchema<{
   content: string;
+  request_id: string;
   focus_node_ids?: string[];
   reading_context?: SourceReadingContext | null;
   capture_graph_changes?: boolean;
 }>('graphChatTurnArgsSchema');
+const cancelChatTurnArgsSchema = contractSchema<{ request_id: string }>('cancelChatTurnArgsSchema');
+const cancelChatTurnResultSchema = contractSchema<CancelChatTurnResult>(
+  'cancelChatTurnResultSchema'
+);
 const graphCanvasNodesSchema = contractSchema<GraphCanvasNode[]>('graphCanvasNodesSchema');
 const graphNodeSearchArgsSchema = contractSchema<{
   query: string;
@@ -168,15 +174,26 @@ export async function sendGraphWorkspaceChatTurn(
   focusNodeIds: string[] = [],
   options: {
     readingContext?: SourceReadingContext | null;
+    requestId: string;
     captureGraphChanges?: boolean;
-  } = {}
+  }
 ): Promise<GraphChatTurnResult> {
   return invokeRequired('send_graph_chat_turn', graphChatTurnResultSchema, graphChatTurnArgsSchema, {
     content,
     focus_node_ids: focusNodeIds,
+    request_id: options.requestId,
     reading_context: options.readingContext,
     capture_graph_changes: options.captureGraphChanges
   });
+}
+
+export async function cancelWorkspaceChatTurn(requestId: string): Promise<CancelChatTurnResult> {
+  return invokeRequired(
+    'cancel_chat_turn',
+    cancelChatTurnResultSchema,
+    cancelChatTurnArgsSchema,
+    { request_id: requestId }
+  );
 }
 
 export async function undoGraphWorkspacePatch(patchId: string): Promise<UndoGraphPatchResult> {

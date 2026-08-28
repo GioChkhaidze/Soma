@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
-import type { SaveBrainSettingsInput } from '../../../../../packages/contracts/src';
+import type { BrainReasoningEffort, SaveBrainSettingsInput } from '../../../../../packages/contracts/src';
 import { listBrainModels } from '../../shared/commands/brainSettingsCommands';
 import { formatError } from '../../shared/errorMessage';
 import {
@@ -14,6 +14,7 @@ import {
 import {
   activeCredentialCue,
   aiSettingsSummary,
+  effectiveBrainModel,
   filterModelOptions,
   modelOptionsForSettings
 } from './aiSettingsViewModel';
@@ -25,6 +26,14 @@ import './ai-settings-panel.css';
 
 const MODEL_PAGE_SIZE = 80;
 const STORED_CREDENTIAL_MASK = '************';
+const REASONING_EFFORT_OPTIONS: Array<{ value: BrainReasoningEffort; label: string }> = [
+  { value: 'none', label: 'None - fastest' },
+  { value: 'low', label: 'Low - quick' },
+  { value: 'medium', label: 'Medium - balanced' },
+  { value: 'high', label: 'High - deeper' },
+  { value: 'xhigh', label: 'XHigh - thorough' },
+  { value: 'max', label: 'Max - slowest' }
+];
 
 type AiSettingsPanelProps = {
   value: AiSettingsDraft;
@@ -85,6 +94,9 @@ export function AiSettingsPanel({
       ? 'Stored key is masked.'
       : null;
   const credentialCue = activeCredentialCue(value, credentialLabel);
+  const chatReasoningEffort = value.defaultReasoningEffort ?? 'medium';
+  const graphReasoningEffort = value.graphReasoningEffort ?? 'xhigh';
+  const policyState = value.updatedAt ? 'Active' : 'Draft';
 
   useEffect(() => {
     setModelOptions([]);
@@ -118,22 +130,24 @@ export function AiSettingsPanel({
 
       <div className="settingsContent">
         <div className="settingsIntro">
-          <span>Brain</span>
           <h3>Brain</h3>
           <p>Choose the runtime, provider, and model Soma should use for chat and graph update drafts.</p>
         </div>
 
         <div className="aiRuntimeSummary" aria-label="Selected brain">
-          <span>Selected</span>
           <strong>{aiSettingsSummary(value)}</strong>
           <small>{provider.status}</small>
+          {provider.id === 'codex_sdk' ? (
+            <small className="aiRuntimePolicy">
+              {policyState}: {effectiveBrainModel(value)} · chat {chatReasoningEffort} · graph {graphReasoningEffort}
+            </small>
+          ) : null}
           <small className={`aiRuntimeCredentialCue is-${credentialCue.tone}`}>{credentialCue.label}</small>
         </div>
 
         <section className="brainRuntimePicker" aria-label={`${activeGroup.title} options`}>
           <div className="settingsSubhead">
             <h4>{activeGroup.title}</h4>
-            <p>{activeGroup.description}</p>
           </div>
 
           {activeGroup.id === 'provider' ? (
@@ -188,15 +202,32 @@ export function AiSettingsPanel({
 
           <div className="aiRuntimeDetails">
             {provider.groupId === 'agent' ? (
-              <label className="aiRuntimeWide">
+              <div className="aiRuntimeWide">
                 <span>{provider.id === 'codex_sdk' ? 'Codex model' : 'Claude Code model'}</span>
                 <input
                   value={value.model}
                   onChange={(event) => updateDraft('model', event)}
                   placeholder={provider.modelPlaceholder}
                   spellCheck={false}
+                  aria-label={provider.id === 'codex_sdk' ? 'Codex model ID' : 'Claude Code model ID'}
                 />
-              </label>
+                {provider.id === 'codex_sdk' ? (
+                  <span className="aiAgentModelChoices" role="radiogroup" aria-label="Codex model">
+                    {provider.models.map((model) => (
+                      <button
+                        className={effectiveBrainModel(value) === model.id ? 'isSelected' : ''}
+                        type="button"
+                        role="radio"
+                        aria-checked={effectiveBrainModel(value) === model.id}
+                        key={model.id}
+                        onClick={() => onChange({ ...value, model: model.id })}
+                      >
+                        {model.label}
+                      </button>
+                    ))}
+                  </span>
+                ) : null}
+              </div>
             ) : (
               <label className="aiRuntimeModelField aiRuntimeWide">
                 <span>Model</span>
@@ -271,6 +302,42 @@ export function AiSettingsPanel({
               </label>
             )}
 
+            {provider.id === 'codex_sdk' ? (
+              <div className="aiReasoningControls aiRuntimeWide" aria-label="Codex reasoning effort">
+                <label>
+                  <span>Chat effort</span>
+                  <select
+                    value={chatReasoningEffort}
+                    onChange={(event) => onChange({
+                      ...value,
+                      defaultReasoningEffort: event.target.value as BrainReasoningEffort
+                    })}
+                  >
+                    {REASONING_EFFORT_OPTIONS.map((option) => (
+                      <option value={option.value} key={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                  <small>Normal questions and paper chat.</small>
+                </label>
+                <label>
+                  <span>Graph effort</span>
+                  <select
+                    value={graphReasoningEffort}
+                    onChange={(event) => onChange({
+                      ...value,
+                      graphReasoningEffort: event.target.value as BrainReasoningEffort
+                    })}
+                  >
+                    {REASONING_EFFORT_OPTIONS.map((option) => (
+                      <option value={option.value} key={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                  <small>Graph capture, connections, node content, and compile.</small>
+                </label>
+                <p>Higher effort can improve hard decisions, but it takes longer.</p>
+              </div>
+            ) : null}
+
             {hasEndpoint ? (
               <label className="aiRuntimeWide">
                 <span>{provider.groupId === 'local' ? 'Endpoint' : 'Base URL'}</span>
@@ -344,7 +411,7 @@ export function AiSettingsPanel({
               <div className="aiRuntimeAction aiRuntimeWide">
                 <button type="button" onClick={() => { void onAuthorizeCodex(); }}>Authorize</button>
                 <button type="button" onClick={() => { void onEnableCodex(); }}>Enable Codex</button>
-                <small>Uses your local Codex login.</small>
+                <small>Uses your local Codex login. Save Brain after changing model or effort.</small>
               </div>
             ) : null}
 
@@ -410,6 +477,8 @@ export function AiSettingsPanel({
         model: value.model,
         endpoint: value.endpoint,
         authProfile: value.authProfile,
+        defaultReasoningEffort: chatReasoningEffort,
+        graphReasoningEffort,
         apiKey: credentialDraft.trim() ? credentialDraft.trim() : undefined,
         clearApiKey: false
       });

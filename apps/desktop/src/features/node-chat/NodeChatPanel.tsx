@@ -12,6 +12,7 @@ import {
   proposalTypeLabel
 } from '../../shared/data/chatReview';
 import { CaptureGraphToggle } from '../../shared/CaptureGraphToggle';
+import { BrainRunStatus, type ActiveBrainRun } from '../../shared/BrainRunStatus';
 import { latestUndoableNodePatch } from './nodeChatViewModel';
 
 type NodeChatPanelProps = {
@@ -22,12 +23,17 @@ type NodeChatPanelProps = {
   reviewQueue: GraphReviewQueueReadModel;
   errorsByMessageId: Record<string, string>;
   busyMessageId: string | null;
+  brainLabel: string;
+  brainEffort: string | null;
+  activeRun: ActiveBrainRun | null;
+  canStop: boolean;
   captureGraphChanges: boolean;
   undoBusyPatchId: string | null;
   onDraftChange: (value: string) => void;
   onCaptureGraphChangesChange: (enabled: boolean) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onOpenReviewUpdates: () => void;
+  onStop: () => void | Promise<void>;
   onUndoGraphChanges: (patchId: string) => void;
 };
 
@@ -41,11 +47,16 @@ export function NodeChatPanel({
   busyMessageId,
   captureGraphChanges,
   undoBusyPatchId,
+  brainLabel,
+  brainEffort,
+  activeRun,
+  canStop,
   onDraftChange,
   onCaptureGraphChangesChange,
   onSubmit,
   onOpenReviewUpdates,
-  onUndoGraphChanges
+  onUndoGraphChanges,
+  onStop
 }: NodeChatPanelProps) {
   const [historyOpen, setHistoryOpen] = useState(false);
   const visibleMessages = historyOpen ? messages : messages.slice(-4);
@@ -95,6 +106,15 @@ export function NodeChatPanel({
         ))}
       </div>
       {error ? <p className="nodeChatError">{error}</p> : null}
+      <BrainRunStatus
+        brainLabel={brainLabel}
+        effort={activeRun?.effort ?? brainEffort}
+        active={activeRun !== null}
+        startedAt={activeRun?.startedAt ?? null}
+        stopping={activeRun?.stopping}
+        canStop={canStop}
+        onStop={onStop}
+      />
       <form className="nodeChatForm" onSubmit={onSubmit}>
         <CaptureGraphToggle
           enabled={captureGraphChanges}
@@ -106,7 +126,6 @@ export function NodeChatPanel({
           onChange={(event) => onDraftChange(event.target.value)}
           aria-label="Message this node"
           placeholder="Work inside this node"
-          disabled={busy}
         />
         <button type="submit" disabled={busy || !draft.trim()}>
           {busy ? 'Thinking' : 'Send'}

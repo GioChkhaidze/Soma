@@ -1,12 +1,12 @@
 import type {
-  GraphNode,
+  GraphNodeDetail,
   RollbackNodeBodyResult,
   UpdateNodeBodyResult
 } from '../../../../../packages/contracts/src';
 
 import { contractSchema, invokeRequired } from './tauriCommandClient';
 
-const graphNodeSchema = contractSchema<GraphNode>('graphNodeSchema');
+const graphNodeSchema = contractSchema<GraphNodeDetail>('graphNodeSchema');
 const nodeIdArgsSchema = contractSchema<{ node_id: string }>('nodeMessagesArgsSchema');
 const rollbackNodeBodyArgsSchema = contractSchema<{
   node_id: string;
@@ -16,7 +16,7 @@ const rollbackNodeBodyResultSchema = contractSchema<RollbackNodeBodyResult>('rol
 const updateNodeBodyArgsSchema = contractSchema<{ node_id: string; compiled_body: string }>('updateNodeBodyArgsSchema');
 const updateNodeBodyResultSchema = contractSchema<UpdateNodeBodyResult>('updateNodeBodyResultSchema');
 
-export async function loadGraphNodeDetail(nodeId: string): Promise<GraphNode> {
+export async function loadGraphNodeDetail(nodeId: string): Promise<GraphNodeDetail> {
   return invokeRequired('load_graph_node_detail', graphNodeSchema, nodeIdArgsSchema, { node_id: nodeId });
 }
 

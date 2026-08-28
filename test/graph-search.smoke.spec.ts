@@ -31,6 +31,15 @@ test('global search owns async results and opens a node beyond the startup canva
   await expect(inspector.getByRole('heading', { name: 'Tail Node 164' })).toBeVisible();
   await expect(inspector.getByRole('button', { name: 'Context' })).toHaveCount(0);
   await expect.poll(() => detailRequests(page)).toContain('node-164');
+
+  const connections = inspector.getByLabel('Connections');
+  const relatedNode = connections.getByRole('button', { name: /Canvas Node 000/ });
+  await expect(relatedNode).toContainText('This idea depends on it.');
+  await expect(connections).not.toContainText('outgoing');
+  await expect(connections).not.toContainText('depends_on');
+  await relatedNode.click();
+  await expect(inspector.getByRole('heading', { name: 'Canvas Node 000' })).toBeVisible();
+  await expect.poll(() => detailRequests(page)).toContain('node-000');
 });
 
 test('an off-canvas graph-chat context link hydrates and opens its node', async ({ page }) => {
@@ -73,6 +82,7 @@ async function installGraphSearchMock(page: Page) {
         'Startup canvas node.'
       )
     ));
+    const relatedNode = canvasNodes[0];
     const tailNode = nodeCard('node-164', 'Tail Node 164', 'Contains tailneedle beyond the startup canvas.');
     const slowNode = nodeCard('node-slow', 'Slow result', 'This response must stay stale.');
     const fastNode = nodeCard('node-fast', 'Fast result', 'This is the latest response.');
@@ -80,8 +90,33 @@ async function installGraphSearchMock(page: Page) {
       ...tailNode,
       compiled_body: 'This node is active but omitted from the bounded startup canvas.',
       evidence: [],
-      body_sections: [],
-      update_history: []
+      update_history: [],
+      relations: {
+        items: [{
+          edge_id: 'edge-tail-depends-on-canvas',
+          type: 'depends_on',
+          direction: 'outgoing',
+          bridge_text: '',
+          neighbor: { id: relatedNode.id, title: relatedNode.title }
+        }],
+        is_partial: false
+      }
+    };
+    const relatedNodeDetail = {
+      ...relatedNode,
+      compiled_body: 'A startup-canvas node connected to the off-canvas result.',
+      evidence: [],
+      update_history: [],
+      relations: {
+        items: [{
+          edge_id: 'edge-tail-depends-on-canvas',
+          type: 'depends_on',
+          direction: 'incoming',
+          bridge_text: '',
+          neighbor: { id: tailNode.id, title: tailNode.title }
+        }],
+        is_partial: false
+      }
     };
     const emptyReviewQueue = {
       generated_at: '2026-07-25T00:00:00.000Z',
@@ -158,8 +193,9 @@ async function installGraphSearchMock(page: Page) {
           return [];
         }
         if (command === 'load_graph_node_detail') {
-          state.__detailRequests?.push(String(args?.node_id ?? ''));
-          return nodeDetail;
+          const nodeId = String(args?.node_id ?? '');
+          state.__detailRequests?.push(nodeId);
+          return nodeId === relatedNode.id ? relatedNodeDetail : nodeDetail;
         }
         if (command === 'list_node_messages') return [];
         if (command === 'list_graph_messages') return [graphMessage];

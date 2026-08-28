@@ -7,12 +7,9 @@ import {
   type KeyboardEvent
 } from 'react';
 
-import type {
-  GraphAreaRef,
-  GraphReviewQueueReadModel,
-  SourceReadingContext
-} from '../../../../../packages/contracts/src';
+import type { GraphAreaRef, GraphReviewQueueReadModel } from '../../../../../packages/contracts/src';
 import { CaptureGraphToggle } from '../../shared/CaptureGraphToggle';
+import { BrainRunStatus, type ActiveBrainRun } from '../../shared/BrainRunStatus';
 import {
   chatUpdateSummaryForMessage,
   displayChatMessageContent,
@@ -31,17 +28,21 @@ type GraphChatPanelProps = {
   draft: string;
   usedAreas: GraphAreaRef[];
   focusAreas: GraphAreaRef[];
-  readingContext: SourceReadingContext | null;
   readingContextPending: boolean;
   captureGraphChanges: boolean;
   reviewQueue: GraphReviewQueueReadModel;
   errorsByMessageId: Record<string, string>;
   busyMessageId: string | null;
+  brainLabel: string;
+  brainEffort: string | null;
+  activeRun: ActiveBrainRun | null;
+  canStop: boolean;
   focusRequest?: number;
   onDraftChange: (value: string) => void;
   onCaptureGraphChangesChange: (enabled: boolean) => void;
   onSubmit: () => void | Promise<void>;
   onSelectNode: (nodeId: string) => void;
+  onStop: () => void | Promise<void>;
   onLoadMessages: () => void;
   onOpenReviewUpdates: () => void;
   onUndoGraphChanges: (patchId: string) => void;
@@ -54,18 +55,22 @@ export function GraphChatPanel({
   draft,
   usedAreas,
   focusAreas,
-  readingContext,
   readingContextPending,
   captureGraphChanges,
   reviewQueue,
   errorsByMessageId,
   busyMessageId,
   focusRequest = 0,
+  brainLabel,
+  brainEffort,
+  activeRun,
+  canStop,
   onDraftChange,
   onCaptureGraphChangesChange,
   onSubmit,
   onSelectNode,
   onLoadMessages,
+  onStop,
   onOpenReviewUpdates,
   onUndoGraphChanges,
   undoablePatch,
@@ -179,14 +184,21 @@ export function GraphChatPanel({
 
       <form
         className="graphChatForm"
-        aria-busy={readingContextPending}
+        aria-busy={readingContextPending || isWaitingForAnswer}
         onSubmit={(event) => {
           event.preventDefault();
           if (!readingContextPending) void onSubmit();
         }}
       >
-        {readingContextPending ? <ReadingContextPending /> : null}
-        {!readingContextPending && readingContext ? <ReadingContextBar context={readingContext} /> : null}
+        <BrainRunStatus
+          brainLabel={brainLabel}
+          effort={activeRun?.effort ?? brainEffort}
+          active={activeRun !== null}
+          startedAt={activeRun?.startedAt ?? null}
+          stopping={activeRun?.stopping}
+          canStop={canStop}
+          onStop={onStop}
+        />
         <div className="graphChatComposer hasCaptureToggle">
           <CaptureGraphToggle
             enabled={captureGraphChanges}
@@ -199,7 +211,6 @@ export function GraphChatPanel({
             onChange={(event) => onDraftChange(event.target.value)}
             onKeyDown={(event) => submitOnEnter(event, sendBlocked)}
             placeholder="Ask Soma"
-            disabled={isWaitingForAnswer}
             rows={1}
           />
           <button
@@ -363,36 +374,6 @@ function GraphChatMessageItem({
         </div>
       ) : null}
     </article>
-  );
-}
-
-function ReadingContextBar({ context }: { context: SourceReadingContext }) {
-  const selectionPage = context.selection_page_number ?? context.page_number;
-  return (
-    <div className="graphChatReadingContext" aria-label="Paper context">
-      <PaperContextIcon />
-      <span title={context.document_name}>{context.document_name}</span>
-      <span>p. {context.page_number} / {context.page_count}</span>
-      {context.selected_text ? <strong>Selection from p. {selectionPage}</strong> : null}
-    </div>
-  );
-}
-
-function ReadingContextPending() {
-  return (
-    <div className="graphChatReadingContext" aria-label="Paper context" role="status">
-      <PaperContextIcon />
-      <span>Reading current page...</span>
-    </div>
-  );
-}
-
-function PaperContextIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M6 3.5h8l4 4v13H6z" />
-      <path d="M14 3.5v4h4M9 12h6M9 15.5h6" />
-    </svg>
   );
 }
 

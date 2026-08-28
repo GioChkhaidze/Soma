@@ -1,22 +1,24 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 
 import type {
-  GraphCanvasEdge,
-  GraphCanvasNode,
-  GraphNode,
+  GraphNodeDetail,
+  GraphNodeRelation,
   GraphReviewQueueReadModel,
   NodeThreadMessage
 } from '../../../../../packages/contracts/src';
 import { formatError } from '../../shared/errorMessage';
 import { NodeChatPanel } from '../node-chat/NodeChatPanel';
+import type { ActiveBrainRun } from '../../shared/BrainRunStatus';
 
 type NodeInspectorProps = {
-  node: GraphNode | null;
-  edges: GraphCanvasEdge[];
-  nodes: GraphCanvasNode[];
+  node: GraphNodeDetail;
   nodeMessages: NodeThreadMessage[];
   nodeChatDraft: string;
   nodeChatBusy: boolean;
+  brainLabel: string;
+  brainEffort: string | null;
+  nodeChatActiveRun: ActiveBrainRun | null;
+  canStopBrain: boolean;
   nodeChatError: string | null;
   nodeChatReviewQueue: GraphReviewQueueReadModel;
   nodeChatJobErrors: Record<string, string>;
@@ -31,6 +33,7 @@ type NodeInspectorProps = {
   onCaptureGraphChangesChange: (enabled: boolean) => void;
   onSendNodeMessage: (event: FormEvent<HTMLFormElement>) => void;
   onOpenReviewUpdates: () => void;
+  onStopNodeMessage: () => void | Promise<void>;
   onUndoGraphChanges: (patchId: string) => void;
   onSaveNodeBody: (nodeId: string, compiledBody: string) => Promise<void>;
   onRollbackNodeBody: (nodeId: string, versionNumber: number) => Promise<void>;
@@ -38,12 +41,14 @@ type NodeInspectorProps = {
 
 export function NodeInspector({
   node,
-  edges,
-  nodes,
   nodeMessages,
   nodeChatDraft,
   nodeChatBusy,
   nodeChatError,
+  brainLabel,
+  brainEffort,
+  nodeChatActiveRun,
+  canStopBrain,
   nodeChatReviewQueue,
   nodeChatJobErrors,
   nodeChatJobBusyId,
@@ -57,52 +62,39 @@ export function NodeInspector({
   onCaptureGraphChangesChange,
   onSendNodeMessage,
   onOpenReviewUpdates,
+  onStopNodeMessage,
   onUndoGraphChanges,
   onSaveNodeBody,
   onRollbackNodeBody
 }: NodeInspectorProps) {
   const [isEditingBody, setIsEditingBody] = useState(false);
-  const [bodyDraft, setBodyDraft] = useState(node?.compiled_body ?? '');
+  const [bodyDraft, setBodyDraft] = useState(node.compiled_body);
   const [bodyBusy, setBodyBusy] = useState(false);
   const [bodyError, setBodyError] = useState<string | null>(null);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
-  const nodeTitlesById = useMemo(() => new Map(nodes.map((item) => [item.id, item.title])), [nodes]);
 
   useEffect(() => {
     if (!isEditingBody) {
-      setBodyDraft(node?.compiled_body ?? '');
+      setBodyDraft(node.compiled_body);
       setBodyError(null);
     }
-  }, [isEditingBody, node?.compiled_body, node?.id]);
+  }, [isEditingBody, node.compiled_body, node.id]);
 
   useEffect(() => {
     setEvidenceOpen(false);
     setHistoryOpen(false);
-  }, [node?.id]);
-
-  if (!node) {
-    return null;
-  }
+  }, [node.id]);
 
   const activeNode = node;
-  const evidence = node.evidence ?? [];
-  const bodySections = node.body_sections?.length > 0
-    ? node.body_sections
-    : node.compiled_body.split(/\n{2,}/).map((content, index) => ({
-        id: `${node.id}:${index}`,
-        index: index + 1,
-        content
-      }));
-  const updateHistory = node.update_history ?? [];
+  const evidence = node.evidence;
+  const bodySections = node.compiled_body.split(/\n{2,}/).map((section) => section.trim()).filter(Boolean);
+  const updateHistory = node.update_history;
 
   return (
     <aside className="nodeInspector" aria-label="Node detail">
       <header className="documentHeader">
-        <div>
-          <p className="documentType">{node.type}</p>
-          <h2>{node.title}</h2>
-        </div>
+        <h2>{node.title}</h2>
         <div className="documentActions">
           {canFocus ? (
             <button
@@ -120,7 +112,7 @@ export function NodeInspector({
             aria-expanded={evidenceOpen}
             onClick={() => setEvidenceOpen((open) => !open)}
           >
-            Sources
+            Evidence
           </button>
           <button
             type="button"
@@ -128,7 +120,7 @@ export function NodeInspector({
             aria-expanded={historyOpen}
             onClick={() => setHistoryOpen((open) => !open)}
           >
-            History
+            Versions
           </button>
           <button type="button" onClick={() => setIsEditingBody((value) => !value)}>
             {isEditingBody ? 'Close' : 'Edit'}
@@ -163,37 +155,39 @@ export function NodeInspector({
         </form>
       ) : (
         <article className="compiledBody">
-          {bodySections.map((section) => (
-            <section className="bodySection" key={section.id}>
-              <p>{section.content}</p>
+          {bodySections.map((section, index) => (
+            <section className="bodySection" key={`${node.id}:${index}`}>
+              <p>{section}</p>
             </section>
           ))}
         </article>
       )}
 
-      <section className="relatedNodesPanel" aria-label="Related nodes">
-        <h3>Related</h3>
-        {edges.length === 0 ? (
-          <p className="mutedText">No active bridge links.</p>
+      <section className="relatedNodesPanel" aria-label="Connections">
+        <h3>Connections</h3>
+        {node.relations.items.length === 0 ? (
+          <p className="mutedText">No connections yet.</p>
         ) : (
           <ul className="relatedNodeList">
-            {edges.map((edge) => (
-              <li key={edge.id}>
-                <button type="button" onClick={() => onSelectNode(neighborId(edge, node.id))}>
-                  <span>{neighborTitle(edge, node.id, nodeTitlesById)}</span>
-                  <small>{edgeDirection(edge, node.id)} / {edge.type}</small>
+            {node.relations.items.map((relation) => (
+              <li key={relation.edge_id}>
+                <button type="button" onClick={() => onSelectNode(relation.neighbor.id)}>
+                  <span>{relation.neighbor.title}</span>
+                  <span className="connectionDescription">
+                    {relation.bridge_text || relationDescription(relation)}
+                  </span>
                 </button>
-                {edge.bridge_text ? <p>{edge.bridge_text}</p> : null}
               </li>
             ))}
           </ul>
         )}
+        {node.relations.is_partial ? <p className="mutedText">More connections are available.</p> : null}
       </section>
 
       {evidenceOpen ? (
-        <section className="evidenceDrawer" aria-label="Source evidence">
+        <section className="evidenceDrawer" aria-label="Evidence">
           <div className="documentDisclosureHeader">
-            <h3>Source Evidence</h3>
+            <h3>Evidence</h3>
             <span>{evidence.length}</span>
           </div>
           {evidence.length === 0 ? (
@@ -216,9 +210,9 @@ export function NodeInspector({
       ) : null}
 
       {historyOpen ? (
-        <section className="evidenceBlock" aria-label="Update history">
+        <section className="evidenceBlock" aria-label="Versions">
           <div className="documentDisclosureHeader">
-            <h3>Update History</h3>
+            <h3>Versions</h3>
             <span>v{node.body_version}</span>
           </div>
           {updateHistory.length === 0 ? (
@@ -250,6 +244,10 @@ export function NodeInspector({
         draft={nodeChatDraft}
         busy={nodeChatBusy}
         error={nodeChatError}
+        brainLabel={brainLabel}
+        brainEffort={brainEffort}
+        activeRun={nodeChatActiveRun}
+        canStop={canStopBrain}
         reviewQueue={nodeChatReviewQueue}
         errorsByMessageId={nodeChatJobErrors}
         busyMessageId={nodeChatJobBusyId}
@@ -259,6 +257,7 @@ export function NodeInspector({
         onCaptureGraphChangesChange={onCaptureGraphChangesChange}
         onSubmit={onSendNodeMessage}
         onOpenReviewUpdates={onOpenReviewUpdates}
+        onStop={onStopNodeMessage}
         onUndoGraphChanges={onUndoGraphChanges}
       />
     </aside>
@@ -293,20 +292,44 @@ export function NodeInspector({
   }
 }
 
-function neighborId(edge: GraphCanvasEdge, nodeId: string) {
-  return edge.source_node_id === nodeId ? edge.target_node_id : edge.source_node_id;
+const outgoingRelationDescriptions: Record<string, string> = {
+  part_of: 'This idea is part of it.',
+  supports: 'This idea supports it.',
+  contradicts: 'This idea challenges it.',
+  depends_on: 'This idea depends on it.',
+  answers: 'This idea answers it.',
+  implements: 'This idea puts it into practice.',
+  mentions: 'This idea refers to it.',
+  derived_from: 'This idea draws from it.',
+  alternative_to: 'An alternative to this idea.',
+  blocks: 'This idea blocks it.',
+  next_step: 'This idea follows it.',
+  mitigates: 'This idea reduces its risk.'
+};
+
+const incomingRelationDescriptions: Record<string, string> = {
+  part_of: 'It is part of this idea.',
+  supports: 'It supports this idea.',
+  contradicts: 'It challenges this idea.',
+  depends_on: 'It depends on this idea.',
+  answers: 'It answers this idea.',
+  implements: 'It puts this idea into practice.',
+  mentions: 'It refers to this idea.',
+  derived_from: 'It draws from this idea.',
+  alternative_to: 'An alternative to this idea.',
+  blocks: 'It blocks this idea.',
+  next_step: 'It follows this idea.',
+  mitigates: 'It reduces this idea’s risk.'
+};
+
+function relationDescription(relation: GraphNodeRelation) {
+  const descriptions = relation.direction === 'outgoing'
+    ? outgoingRelationDescriptions
+    : incomingRelationDescriptions;
+  return descriptions[relation.type] ?? 'Connected to this idea.';
 }
 
-function neighborTitle(edge: GraphCanvasEdge, nodeId: string, nodeTitlesById: Map<string, string>) {
-  const id = neighborId(edge, nodeId);
-  return nodeTitlesById.get(id) ?? id;
-}
-
-function edgeDirection(edge: GraphCanvasEdge, nodeId: string) {
-  return edge.source_node_id === nodeId ? 'outgoing' : 'incoming';
-}
-
-function messageLabel(item: GraphNode['evidence'][number]) {
+function messageLabel(item: GraphNodeDetail['evidence'][number]) {
   if (!item.message) return 'message';
   return `${item.message.role} #${Number(item.message.order_index ?? 0) + 1}`;
 }

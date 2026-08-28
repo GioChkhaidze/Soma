@@ -16,6 +16,10 @@ import { layoutNodeFromPosition, pinnedNodeIdsWith, upsertLayoutOverride } from 
 import { emptyReviewQueue, pendingReviewCount } from '../shared/data/reviewQueue';
 import { useGraphChatController } from './controllers/useGraphChatController';
 import { useBrainSettingsController } from './controllers/useBrainSettingsController';
+import {
+  activeBrainEffort as effortForBrain,
+  activeBrainLabel as labelForBrain
+} from '../features/settings/aiSettingsViewModel';
 import { useJobController } from './controllers/useJobController';
 import { useGraphReadModelCoordinator } from './controllers/useGraphReadModelCoordinator';
 import { useNodeLayoutPersistence } from './controllers/useNodeLayoutPersistence';
@@ -73,6 +77,7 @@ export function WorkspaceApp({ initialWorkspace, initialWorkspaceError = null }:
   const [workspaceError, setWorkspaceError] = useState<string | null>(initialWorkspaceError);
   const {
     draft: aiSettingsDraft,
+    activeSettings: activeAiSettings,
     notice: aiSettingsNotice,
     setupMessage: brainSetupMessage,
     updateDraft: updateAiSettingsDraft,
@@ -91,6 +96,9 @@ export function WorkspaceApp({ initialWorkspace, initialWorkspaceError = null }:
   const [activeWorkspaceView, setActiveWorkspaceView] = useState<WorkspaceView>('graph');
   const [readingContext, setReadingContext] = useState<SourceReadingContext | null>(null);
   const [captureGraphChanges, setCaptureGraphChanges] = useState(false);
+  const brainLabel = labelForBrain(activeAiSettings);
+  const brainEffort = effortForBrain(activeAiSettings, captureGraphChanges);
+  const canStopBrain = ['codex_sdk', 'claude_code'].includes(activeAiSettings?.providerId ?? '');
   const [jobRuns, setJobRuns] = useState<JobRun[]>([]);
   const [reviewQueue, setReviewQueue] = useState<GraphReviewQueueReadModel>(emptyReviewQueue);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -121,13 +129,6 @@ export function WorkspaceApp({ initialWorkspace, initialWorkspaceError = null }:
     ? nodesById.get(selectedNodeId)
       ?? (selectedNodeOverride?.id === selectedNodeId ? selectedNodeOverride : null)
     : null;
-  const selectedEdges = useMemo(() => (
-    selectedNode
-      ? visibleSnapshot.edges.filter(
-          (edge) => edge.source_node_id === selectedNode.id || edge.target_node_id === selectedNode.id
-        )
-      : []
-  ), [selectedNode, visibleSnapshot.edges]);
   const paperIsActive = activeWorkspaceView === 'paper' && paperFile !== null;
   const activeReadingContext = paperIsActive ? readingContext : null;
   const readingContextPending = paperIsActive && activeReadingContext === null;
@@ -204,6 +205,7 @@ export function WorkspaceApp({ initialWorkspace, initialWorkspaceError = null }:
     readingContext: activeReadingContext,
     readingContextPending,
     captureGraphChanges,
+    brainEffort,
     reviewQueue,
     graphReadModels,
     setWorkspaceNotice,
@@ -649,13 +651,14 @@ export function WorkspaceApp({ initialWorkspace, initialWorkspaceError = null }:
             workspaceGuard={workspaceGuard}
             hasWorkspace={hasWorkspace}
             node={visibleSelectedNode}
-            edges={selectedEdges}
-            nodes={snapshot.nodes}
             reviewQueue={reviewQueue}
             graphReadModels={graphReadModels}
             setWorkspaceNotice={setWorkspaceNotice}
             setWorkspaceError={setWorkspaceError}
             brainSetupMessage={brainSetupMessage}
+            brainLabel={brainLabel}
+            brainEffort={brainEffort}
+            canStopBrain={canStopBrain}
             onBrainSetupRequired={handleBrainSetupRequired}
             captureGraphChanges={captureGraphChanges}
             canFocus={nodesById.has(visibleSelectedNode.id)}
@@ -677,16 +680,20 @@ export function WorkspaceApp({ initialWorkspace, initialWorkspaceError = null }:
             draft={graphChatController.draft}
             usedAreas={graphChatController.usedAreas}
             focusAreas={focusAreas}
-            readingContext={activeReadingContext}
             readingContextPending={readingContextPending}
             captureGraphChanges={captureGraphChanges}
             reviewQueue={reviewQueue}
             errorsByMessageId={graphChatController.errorsByMessageId}
             busyMessageId={graphChatController.busyMessageId}
+            brainLabel={brainLabel}
+            brainEffort={brainEffort}
+            activeRun={graphChatController.activeRun}
+            canStop={canStopBrain}
             focusRequest={graphChatController.focusRequest}
             onDraftChange={graphChatController.setDraft}
             onCaptureGraphChangesChange={setCaptureGraphChanges}
             onSubmit={graphChatController.send}
+            onStop={graphChatController.stop}
             onSelectNode={selectGraphNode}
             onLoadMessages={graphChatController.ensureHistory}
             onOpenReviewUpdates={() => setActiveSidebarPanel('updates')}

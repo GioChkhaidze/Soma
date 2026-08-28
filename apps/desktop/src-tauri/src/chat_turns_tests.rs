@@ -6,7 +6,7 @@ use crate::repository::WorkspaceStore;
 use crate::source_import::import_source_file;
 use crate::workspace::{create_workspace_dir, WorkspacePaths};
 use rusqlite::{params, Connection};
-use soma_ai_runtime::NoopCredentialResolver;
+use soma_ai_runtime::{AgentTaskCancellation, NoopCredentialResolver};
 use std::collections::HashSet;
 use std::fs;
 use std::io::{Read, Write};
@@ -41,7 +41,14 @@ fn send_node_chat_turn_with_runtime_and_capture(
   content: &str,
   capture_graph_changes: bool,
 ) -> CommandResult<Value> {
-  send_node_chat_turn_with_credentials(paths, runtime, node_id, content, capture_graph_changes, &NoopCredentialResolver)
+  send_node_chat_turn_with_credentials(
+    paths,
+    runtime,
+    node_id,
+    content,
+    capture_graph_changes,
+    ChatRuntimeExecution::new(&NoopCredentialResolver, AgentTaskCancellation::new()),
+  )
 }
 
 #[test]
@@ -254,7 +261,7 @@ fn graph_chat_turn_uses_paper_context_without_mutating_graph_when_capture_is_off
       "selection_page_number": 4
     })),
     false,
-    &NoopCredentialResolver,
+    ChatRuntimeExecution::new(&NoopCredentialResolver, AgentTaskCancellation::new()),
   )
   .unwrap();
   server.join().unwrap();

@@ -17,7 +17,7 @@ pub mod response;
 pub use adapters::anthropic_messages::{AnthropicMessagesConfig, AnthropicMessagesProvider};
 pub use adapters::cli_agent::{CliAgentConfig, CliAgentRuntime, CliPromptMode};
 pub use adapters::openai_compatible::{OpenAiCompatibleConfig, OpenAiCompatibleProvider};
-pub use agent::{AgentTaskRequest, AgentTaskResult, AgentTaskStatus};
+pub use agent::{AgentTaskCancellation, AgentTaskRequest, AgentTaskResult, AgentTaskStatus};
 pub use credentials::{CredentialRef, CredentialResolver, NoopCredentialResolver};
 pub use errors::AiRuntimeError;
 pub use ids::{ModelId, ProviderId};

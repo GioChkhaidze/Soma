@@ -3,11 +3,12 @@ use std::collections::{HashMap, HashSet};
 use rusqlite::{params, params_from_iter, Connection, OptionalExtension};
 use serde_json::{json, Value};
 
-use crate::contracts::{GRAPH_PATCH_SCHEMA_VERSION, NODE_BODY_MAX_WORDS};
+use crate::contracts::GRAPH_PATCH_SCHEMA_VERSION;
 use crate::error::{CommandError, CommandResult};
 
 const EXCERPT_MAX_CHARS: usize = 260;
 const CONTEXT_EDGE_LIMIT: usize = 16;
+const NODE_DETAIL_RELATION_LIMIT: usize = 24;
 pub(crate) const STARTUP_CANVAS_NODE_LIMIT: usize = 160;
 pub(crate) const STARTUP_CANVAS_EDGE_LIMIT: usize = 320;
 
@@ -397,7 +398,59 @@ fn active_context_edges(conn: &Connection, node_ids: &[String]) -> CommandResult
 }
 
 pub(crate) fn active_graph_node_detail(conn: &Connection, node_id: &str) -> CommandResult<Value> {
-  full_node_value(conn, active_node_row(conn, node_id)?)
+  let node = active_node_row(conn, node_id)?;
+  let relations = active_node_relations(conn, &node.id)?;
+  let mut detail = full_node_value(conn, node)?;
+  detail["relations"] = relations;
+  Ok(detail)
+}
+
+fn active_node_relations(conn: &Connection, node_id: &str) -> CommandResult<Value> {
+  let mut stmt = conn.prepare(
+    r#"
+    SELECT
+      graph_edges.id,
+      graph_edges.edge_type,
+      COALESCE(graph_edges.bridge_text, ''),
+      CASE
+        WHEN graph_edges.source_node_id = ?1 THEN 'outgoing'
+        ELSE 'incoming'
+      END AS direction,
+      CASE
+        WHEN graph_edges.source_node_id = ?1 THEN target_nodes.id
+        ELSE source_nodes.id
+      END AS neighbor_id,
+      CASE
+        WHEN graph_edges.source_node_id = ?1 THEN target_nodes.title
+        ELSE source_nodes.title
+      END AS neighbor_title
+    FROM graph_edges
+    JOIN graph_nodes AS source_nodes ON graph_edges.source_node_id = source_nodes.id
+    JOIN graph_nodes AS target_nodes ON graph_edges.target_node_id = target_nodes.id
+    WHERE graph_edges.status = 'active'
+      AND source_nodes.status = 'active'
+      AND target_nodes.status = 'active'
+      AND (graph_edges.source_node_id = ?1 OR graph_edges.target_node_id = ?1)
+    ORDER BY neighbor_title COLLATE NOCASE, graph_edges.edge_type, graph_edges.id
+    LIMIT ?2
+    "#,
+  )?;
+  let rows = stmt.query_map(params![node_id, (NODE_DETAIL_RELATION_LIMIT + 1) as i64], |row| {
+    Ok(json!({
+      "edge_id": row.get::<_, String>(0)?,
+      "type": row.get::<_, String>(1)?,
+      "bridge_text": row.get::<_, String>(2)?,
+      "direction": row.get::<_, String>(3)?,
+      "neighbor": {
+        "id": row.get::<_, String>(4)?,
+        "title": row.get::<_, String>(5)?
+      }
+    }))
+  })?;
+  let mut items = rows.collect::<Result<Vec<_>, _>>()?;
+  let is_partial = items.len() > NODE_DETAIL_RELATION_LIMIT;
+  items.truncate(NODE_DETAIL_RELATION_LIMIT);
+  Ok(json!({ "items": items, "is_partial": is_partial }))
 }
 
 fn active_node_row(conn: &Connection, node_id: &str) -> CommandResult<NodeRow> {
@@ -503,8 +556,6 @@ fn full_node_value(conn: &Connection, node: NodeRow) -> CommandResult<Value> {
     "compiled_body": node.compiled_body,
     "body_version": node.version_number,
     "body_version_id": node.body_version_id,
-    "body_max_words": NODE_BODY_MAX_WORDS,
-    "body_sections": [],
     "update_history": node_body_history(conn, &node.id, &node.body_version_id)?,
     "status": node.status,
     "created_at": node.created_at,
@@ -972,6 +1023,16 @@ mod tests {
     assert!(nodes.iter().all(|node| node.get("compiled_body").is_none()));
     assert!(nodes.iter().any(|node| node["id"] == "node_159"));
     assert!(nodes.iter().all(|node| node["id"] != "node_160"));
+    let relations = active_node_relations(&conn, "node_000").unwrap();
+    let items = relations["items"].as_array().unwrap();
+    assert_eq!(items.len(), NODE_DETAIL_RELATION_LIMIT);
+    assert_eq!(relations["is_partial"], true);
+    assert!(items.iter().any(|item| item["direction"] == "outgoing"));
+    assert!(items.iter().any(|item| item["direction"] == "incoming"));
+
+    conn.execute("UPDATE graph_nodes SET status = 'hidden' WHERE id = 'node_001'", []).unwrap();
+    let visible_relations = active_node_relations(&conn, "node_000").unwrap();
+    assert!(visible_relations["items"].as_array().unwrap().iter().all(|item| item["neighbor"]["id"] != "node_001"));
     assert!(edges.iter().all(|edge| edge["source_node_id"] != "node_160" && edge["target_node_id"] != "node_160"));
   }
 

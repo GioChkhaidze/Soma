@@ -394,9 +394,13 @@ export const aiProviderGroups: AiProviderGroup[] = [
         name: 'Codex',
         shortName: 'Codex',
         description: 'Use the installed Codex runtime as Soma brain.',
-        status: 'Enable once',
-        modelPlaceholder: 'default Codex model',
-        models: []
+        status: 'Luna · adaptive reasoning',
+        modelPlaceholder: 'gpt-5.6-luna',
+        models: [
+          { id: 'gpt-5.6-luna', label: 'GPT-5.6 Luna', note: 'Fast default' },
+          { id: 'gpt-5.6-terra', label: 'GPT-5.6 Terra', note: 'Balanced' },
+          { id: 'gpt-5.6-sol', label: 'GPT-5.6 Sol', note: 'Deepest' }
+        ]
       },
       {
         id: 'claude_code',

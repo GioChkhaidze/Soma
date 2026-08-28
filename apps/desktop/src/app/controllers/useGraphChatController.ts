@@ -6,6 +6,7 @@ import type {
   SourceReadingContext,
 } from '../../../../../packages/contracts/src';
 import {
+  cancelWorkspaceChatTurn,
   listGraphWorkspaceMessages,
   sendGraphWorkspaceChatTurn,
   undoGraphWorkspacePatch
@@ -15,7 +16,13 @@ import {
   type GraphChatMessage
 } from '../../features/graph-chat/graphChatViewModel';
 import { mergeMessagesById, settleMessagesById } from '../../shared/data/messageMerge.ts';
-import { chatMessageLengthError, chatTurnErrorMessage, chatUpdateNotice, formatError } from './controllerUtils';
+import {
+  chatMessageLengthError,
+  chatTurnErrorMessage,
+  chatUpdateNotice,
+  createChatRequestId,
+  formatError
+} from './controllerUtils';
 import {
   type WorkspaceRequestOwner
 } from './workspaceRequestOwnership';
@@ -36,12 +43,24 @@ type UseGraphChatControllerOptions = {
   setWorkspaceNotice: Dispatch<SetStateAction<string | null>>;
   setWorkspaceError: Dispatch<SetStateAction<string | null>>;
   brainSetupMessage: string | null;
+  brainEffort: string | null;
   onBrainSetupRequired: (message: string) => void;
 };
 
 type OwnedRequest = {
   owner: WorkspaceRequestOwner;
 };
+type ChatRequest = OwnedRequest & {
+  requestId: string;
+};
+
+type ActiveChatRun = {
+  requestId: string;
+  startedAt: number;
+  effort: string | null;
+  stopping: boolean;
+};
+
 
 export function useGraphChatController({
   workspaceKey,
@@ -57,12 +76,13 @@ export function useGraphChatController({
   setWorkspaceNotice,
   setWorkspaceError,
   brainSetupMessage,
-  onBrainSetupRequired
+  onBrainSetupRequired,
+  brainEffort
 }: UseGraphChatControllerOptions) {
   const chatOwnerRef = useRef(workspaceGuard.capture());
   const historyLoadedOwnerRef = useRef<WorkspaceRequestOwner | null>(null);
   const historyLoadingRef = useRef<OwnedRequest | null>(null);
-  const sendInFlightRef = useRef<OwnedRequest | null>(null);
+  const sendInFlightRef = useRef<ChatRequest | null>(null);
   const undoInFlightRef = useRef<OwnedRequest | null>(null);
 
   const [messages, setMessages] = useState<GraphChatMessage[]>([]);
@@ -73,6 +93,7 @@ export function useGraphChatController({
   const [graphChatJobErrors, setGraphChatJobErrors] = useState<Record<string, string>>({});
   const [undoBusyPatchId, setUndoBusyPatchId] = useState<string | null>(null);
 
+  const [activeRun, setActiveRun] = useState<ActiveChatRun | null>(null);
   const activateWorkspace = useCallback((nextWorkspaceKey: string) => {
     const nextOwner = workspaceGuard.activate(nextWorkspaceKey);
     if (chatOwnerRef.current === nextOwner) return nextOwner;
@@ -89,6 +110,7 @@ export function useGraphChatController({
     setGraphChatJobBusyId(null);
     setUndoBusyPatchId(null);
     return nextOwner;
+    setActiveRun(null);
   }, [workspaceGuard]);
 
   useLayoutEffect(() => {
@@ -134,7 +156,8 @@ export function useGraphChatController({
     const activeOwner = workspaceGuard.capture();
     if (sendInFlightRef.current && workspaceGuard.owns(sendInFlightRef.current.owner)) return;
 
-    let request: OwnedRequest = { owner: activeOwner };
+    const requestId = createChatRequestId('graph');
+    let request: ChatRequest = { owner: activeOwner, requestId };
     sendInFlightRef.current = request;
     let pendingUserId: string | null = null;
     let pendingAssistantId: string | null = null;
@@ -143,7 +166,7 @@ export function useGraphChatController({
       if (!hasWorkspace) {
         const ensuredWorkspaceKey = await ensureWorkspace();
         if (!ensuredWorkspaceKey) return;
-        request = { owner: activateWorkspace(ensuredWorkspaceKey) };
+        request = { owner: activateWorkspace(ensuredWorkspaceKey), requestId };
         sendInFlightRef.current = request;
       }
       if (!workspaceGuard.owns(request.owner)) return;
@@ -174,15 +197,30 @@ export function useGraphChatController({
         }
       ]);
       setGraphChatJobBusyId(createdPendingAssistantId);
+      setActiveRun({
+        requestId,
+        startedAt: Date.now(),
+        effort: brainEffort,
+        stopping: false
+      });
       setDraft('');
 
       const result = await sendGraphWorkspaceChatTurn(content, focusNodeIds, {
         readingContext,
+        requestId,
         captureGraphChanges
       });
       if (!workspaceGuard.owns(request.owner)) return;
       const userMessage: GraphChatMessage = { ...result.user_message, context_packet: result.context_packet };
-      if (result.assistant_message) {
+      const wasCancelled = result.runtime_status === 'cancelled';
+      if (wasCancelled) {
+        setMessages((currentMessages) => settleMessagesById(
+          currentMessages,
+          [createdPendingUserId, createdPendingAssistantId],
+          [userMessage]
+        ));
+        setWorkspaceNotice('Stopped.');
+      } else if (result.assistant_message) {
         const assistantMessage: GraphChatMessage = {
           ...result.assistant_message,
           context_packet: result.context_packet
@@ -253,9 +291,11 @@ export function useGraphChatController({
       }
       if (workspaceGuard.owns(request.owner)) {
         setGraphChatJobBusyId(null);
+        setActiveRun(null);
       }
     }
   }, [
+    brainEffort,
     draft,
     captureGraphChanges,
     focusNodeIds,
@@ -271,6 +311,23 @@ export function useGraphChatController({
     setWorkspaceNotice,
     workspaceGuard
   ]);
+
+  const stop = useCallback(async () => {
+    const request = sendInFlightRef.current;
+    if (!request) return;
+    setActiveRun((current) => (
+      current?.requestId === request.requestId ? { ...current, stopping: true } : current
+    ));
+    try {
+      const result = await cancelWorkspaceChatTurn(request.requestId);
+      if (!result.cancelled) setWorkspaceError('This chat run has already finished.');
+    } catch (error) {
+      setActiveRun((current) => (
+        current?.requestId === request.requestId ? { ...current, stopping: false } : current
+      ));
+      setWorkspaceError(formatError(error));
+    }
+  }, [setWorkspaceError]);
 
   const undo = useCallback(async (patchId: string) => {
     const activeOwner = workspaceGuard.capture();
@@ -320,6 +377,8 @@ export function useGraphChatController({
     focusRequest,
     requestFocus,
     busyMessageId: graphChatJobBusyId,
+    activeRun,
+    stop,
     errorsByMessageId: graphChatJobErrors,
     send,
     ensureHistory,

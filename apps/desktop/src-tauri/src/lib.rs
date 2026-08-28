@@ -1,6 +1,9 @@
+use tauri::Manager;
+
 mod app_data_io;
 mod brain_provider_registry;
 mod brain_settings;
+mod chat_cancellation;
 mod chat_runtime;
 mod chat_thread_store;
 mod chat_turns;
@@ -26,6 +29,12 @@ mod workspace;
 pub fn run() {
   tauri::Builder::default()
     .plugin(tauri_plugin_dialog::init())
+    .on_window_event(|window, event| {
+      if matches!(event, tauri::WindowEvent::CloseRequested { .. }) {
+        chat_cancellation::cancel_all();
+        window.app_handle().exit(0);
+      }
+    })
     .invoke_handler(tauri::generate_handler![
       commands::create_workspace_auto,
       commands::open_workspace_picker,
@@ -50,6 +59,7 @@ pub fn run() {
       commands::load_review_queue,
       commands::persist_node_position,
       commands::send_graph_chat_turn,
+      commands::cancel_chat_turn,
       commands::list_graph_messages,
       commands::send_node_chat_turn,
       commands::list_node_messages,

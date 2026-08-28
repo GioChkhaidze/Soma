@@ -5,8 +5,15 @@ import type {
   NodeThreadMessage
 } from '../../../../../packages/contracts/src';
 import { listNodeWorkspaceMessages, sendNodeWorkspaceChatTurn } from '../../shared/commands/nodeChatCommands';
+import { cancelWorkspaceChatTurn } from '../../shared/commands/graphWorkspaceCommands';
 import { mergeMessagesById, settleMessagesById } from '../../shared/data/messageMerge.ts';
-import { chatMessageLengthError, chatTurnErrorMessage, chatUpdateNotice, formatError } from './controllerUtils';
+import {
+  chatMessageLengthError,
+  chatTurnErrorMessage,
+  chatUpdateNotice,
+  createChatRequestId,
+  formatError
+} from './controllerUtils';
 import type { GraphReadModelCoordinator } from './useGraphReadModelCoordinator';
 import type { WorkspaceRequestOwner } from './workspaceRequestOwnership';
 import type { WorkspaceRequestGuard } from './useWorkspaceRequestGuard';
@@ -19,10 +26,22 @@ type UseNodeChatControllerOptions = {
   setWorkspaceNotice: Dispatch<SetStateAction<string | null>>;
   setWorkspaceError: Dispatch<SetStateAction<string | null>>;
   brainSetupMessage: string | null;
+  brainEffort: string | null;
   onBrainSetupRequired: (message: string) => void;
   captureGraphChanges: boolean;
 };
 
+type ChatRequest = {
+  owner: WorkspaceRequestOwner;
+  requestId: string;
+};
+
+type ActiveChatRun = {
+  requestId: string;
+  startedAt: number;
+  effort: string | null;
+  stopping: boolean;
+};
 export function useNodeChatController({
   workspaceGuard,
   hasWorkspace,
@@ -31,16 +50,18 @@ export function useNodeChatController({
   setWorkspaceNotice,
   setWorkspaceError,
   brainSetupMessage,
+  brainEffort,
   onBrainSetupRequired,
   captureGraphChanges
 }: UseNodeChatControllerOptions) {
-  const sendRequestRef = useRef<{ owner: WorkspaceRequestOwner } | null>(null);
+  const sendRequestRef = useRef<ChatRequest | null>(null);
   const [nodeChatDraft, setNodeChatDraft] = useState('');
   const [nodeChatBusy, setNodeChatBusy] = useState(false);
   const [nodeChatError, setNodeChatError] = useState<string | null>(null);
   const [nodeChatJobBusyId, setNodeChatJobBusyId] = useState<string | null>(null);
   const [nodeChatJobErrors, setNodeChatJobErrors] = useState<Record<string, string>>({});
   const [nodeMessages, setNodeMessages] = useState<NodeThreadMessage[]>([]);
+  const [activeRun, setActiveRun] = useState<ActiveChatRun | null>(null);
 
   useEffect(() => {
     if (!hasWorkspace || !selectedNode?.id) {
@@ -88,7 +109,8 @@ export function useNodeChatController({
     }
 
     if (sendRequestRef.current && workspaceGuard.owns(sendRequestRef.current.owner)) return;
-    const request = { owner: workspaceGuard.capture() };
+    const requestId = createChatRequestId('node');
+    const request: ChatRequest = { owner: workspaceGuard.capture(), requestId };
     sendRequestRef.current = request;
     setNodeChatBusy(true);
     setNodeChatError(null);
@@ -118,11 +140,25 @@ export function useNodeChatController({
         }
       ]);
       setNodeChatJobBusyId(createdPendingAssistantId);
+      setActiveRun({
+        requestId,
+        startedAt: Date.now(),
+        effort: brainEffort,
+        stopping: false
+      });
       setNodeChatDraft('');
 
-      const result = await sendNodeWorkspaceChatTurn(selectedNode.id, content, captureGraphChanges);
+      const result = await sendNodeWorkspaceChatTurn(selectedNode.id, content, requestId, captureGraphChanges);
       if (!workspaceGuard.owns(request.owner)) return;
-      if (result.assistant_message) {
+      const wasCancelled = result.runtime_status === 'cancelled';
+      if (wasCancelled) {
+        setNodeMessages((items) => settleMessagesById(
+          items,
+          [createdPendingUserId, createdPendingAssistantId],
+          [result.user_message]
+        ));
+        setWorkspaceNotice('Stopped.');
+      } else if (result.assistant_message) {
         const assistantMessage = result.assistant_message;
         setNodeMessages((items) => settleMessagesById(
           items,
@@ -191,9 +227,11 @@ export function useNodeChatController({
           setNodeChatJobBusyId(null);
           setNodeChatBusy(false);
         }
+          setActiveRun(null);
       }
     }
   }, [
+    brainEffort,
     hasWorkspace,
     nodeChatDraft,
     selectedNode,
@@ -206,11 +244,30 @@ export function useNodeChatController({
     workspaceGuard
   ]);
 
+  const stopNodeMessage = useCallback(async () => {
+    const request = sendRequestRef.current;
+    if (!request) return;
+    setActiveRun((current) => (
+      current?.requestId === request.requestId ? { ...current, stopping: true } : current
+    ));
+    try {
+      const result = await cancelWorkspaceChatTurn(request.requestId);
+      if (!result.cancelled) setNodeChatError('This chat run has already finished.');
+    } catch (error) {
+      setActiveRun((current) => (
+        current?.requestId === request.requestId ? { ...current, stopping: false } : current
+      ));
+      setNodeChatError(formatError(error));
+    }
+  }, []);
+
   return {
     nodeMessages,
     nodeChatDraft,
     setNodeChatDraft,
     nodeChatBusy,
+    activeRun,
+    stopNodeMessage,
     nodeChatError,
     nodeChatJobBusyId,
     nodeChatJobErrors,

@@ -1,9 +1,8 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 
 import type {
-  GraphCanvasEdge,
   GraphCanvasNode,
-  GraphNode,
+  GraphNodeDetail,
   GraphReviewQueueReadModel
 } from '../../../../packages/contracts/src';
 
@@ -22,13 +21,14 @@ type NodeInspectorHostProps = {
   workspaceGuard: WorkspaceRequestGuard;
   hasWorkspace: boolean;
   node: GraphCanvasNode;
-  edges: GraphCanvasEdge[];
-  nodes: GraphCanvasNode[];
   reviewQueue: GraphReviewQueueReadModel;
   graphReadModels: GraphReadModelCoordinator;
   setWorkspaceNotice: Dispatch<SetStateAction<string | null>>;
   setWorkspaceError: Dispatch<SetStateAction<string | null>>;
   brainSetupMessage: string | null;
+  brainLabel: string;
+  brainEffort: string | null;
+  canStopBrain: boolean;
   onBrainSetupRequired: (message: string) => void;
   captureGraphChanges: boolean;
   canFocus: boolean;
@@ -45,13 +45,14 @@ export function NodeInspectorHost({
   workspaceGuard,
   hasWorkspace,
   node,
-  edges,
-  nodes,
   reviewQueue,
   graphReadModels,
   setWorkspaceNotice,
   setWorkspaceError,
   brainSetupMessage,
+  brainLabel,
+  brainEffort,
+  canStopBrain,
   onBrainSetupRequired,
   captureGraphChanges,
   canFocus,
@@ -63,7 +64,7 @@ export function NodeInspectorHost({
   onUndoGraphChanges,
   undoBusyPatchId
 }: NodeInspectorHostProps) {
-  const [nodeDetail, setNodeDetail] = useState<GraphNode | null>(null);
+  const [nodeDetail, setNodeDetail] = useState<GraphNodeDetail | null>(null);
   const [nodeDetailError, setNodeDetailError] = useState<string | null>(null);
   const nodeChatController = useNodeChatController({
     workspaceGuard,
@@ -73,6 +74,7 @@ export function NodeInspectorHost({
     setWorkspaceNotice,
     setWorkspaceError,
     brainSetupMessage,
+    brainEffort,
     onBrainSetupRequired,
     captureGraphChanges
   });
@@ -98,10 +100,7 @@ export function NodeInspectorHost({
     return (
       <aside className="nodeInspector" aria-label="Node detail">
         <header className="documentHeader">
-          <div>
-            <p className="documentType">{node.type}</p>
-            <h2>{node.title}</h2>
-          </div>
+          <h2>{node.title}</h2>
         </header>
         <article className="compiledBody">
           <p className="mutedText">{nodeDetailError ?? 'Loading node detail.'}</p>
@@ -113,11 +112,13 @@ export function NodeInspectorHost({
   return (
     <NodeInspector
       node={nodeDetail}
-      edges={edges}
-      nodes={nodes}
       nodeMessages={nodeChatController.nodeMessages}
       nodeChatDraft={nodeChatController.nodeChatDraft}
       nodeChatBusy={nodeChatController.nodeChatBusy}
+      brainLabel={brainLabel}
+      brainEffort={brainEffort}
+      nodeChatActiveRun={nodeChatController.activeRun}
+      canStopBrain={canStopBrain}
       nodeChatError={nodeChatController.nodeChatError}
       nodeChatReviewQueue={reviewQueue}
       nodeChatJobErrors={nodeChatController.nodeChatJobErrors}
@@ -132,6 +133,7 @@ export function NodeInspectorHost({
       onCaptureGraphChangesChange={onCaptureGraphChangesChange}
       onSendNodeMessage={nodeChatController.sendNodeMessage}
       onOpenReviewUpdates={onOpenReviewUpdates}
+      onStopNodeMessage={nodeChatController.stopNodeMessage}
       onUndoGraphChanges={onUndoGraphChanges}
       onSaveNodeBody={handleSaveNodeBody}
       onRollbackNodeBody={handleRollbackNodeBody}

@@ -87,6 +87,7 @@ import {
   compileGraphWorkspaceResultSchema,
   graphChatTurnArgsSchema,
   graphReviewQueueReadModelSchema,
+  graphNodeSchema,
   graphChatTurnResultSchema,
   listJobsResultSchema,
   nodeMessageArgsSchema,
@@ -173,20 +174,22 @@ test('Tauri command boundary validates lazy contract schemas', async (context) =
 
 test('chat command contracts share one Unicode character bound', () => {
   const maximum = '🧠'.repeat(CHAT_MESSAGE_MAX_CHARACTERS);
-  const graphArgs = graphChatTurnArgsSchema.parse({ content: `  ${maximum}  ` });
+  const graphArgs = graphChatTurnArgsSchema.parse({ request_id: 'graph-test', content: `  ${maximum}  ` });
   const nodeArgs = nodeMessageArgsSchema.parse({
     node_id: 'node-1',
     content: maximum,
+    request_id: 'node-test',
     capture_graph_changes: false
   });
 
   assert.equal(Array.from(graphArgs.content).length, CHAT_MESSAGE_MAX_CHARACTERS);
   assert.equal(Array.from(nodeArgs.content).length, CHAT_MESSAGE_MAX_CHARACTERS);
   for (const parse of [
-    () => graphChatTurnArgsSchema.parse({ content: `${maximum}x` }),
+    () => graphChatTurnArgsSchema.parse({ request_id: 'graph-test', content: `${maximum}x` }),
     () => nodeMessageArgsSchema.parse({
       node_id: 'node-1',
       content: `${maximum}x`,
+      request_id: 'node-test',
       capture_graph_changes: false
     })
   ]) {
@@ -238,8 +241,8 @@ test('mutating graph and chat commands remain pending until Tauri invoke settles
   const cases = [
     ['compile_graph_workspace', () => compileGraphWorkspace()],
     ['run_compile_job', () => runCompileJob('job-1')],
-    ['send_graph_chat_turn', () => sendGraphWorkspaceChatTurn('Explain this graph.')],
-    ['send_node_chat_turn', () => sendNodeWorkspaceChatTurn('node-1', 'Explain this node.', false)]
+    ['send_graph_chat_turn', () => sendGraphWorkspaceChatTurn('Explain this graph.', [], { requestId: 'graph-test' })],
+    ['send_node_chat_turn', () => sendNodeWorkspaceChatTurn('node-1', 'Explain this node.', 'node-test', false)]
   ];
 
   for (const [expectedCommand, start] of cases) {
@@ -283,10 +286,45 @@ test('graph workspace fixture matches the accepted graph snapshot shape', () => 
     assert.equal(Number.isInteger(node.body_version), true);
     assert.equal(Array.isArray(node.source_chunk_ids), true);
     assert.equal(Array.isArray(node.evidence), true);
-    assert.equal(Array.isArray(node.body_sections), true);
     assert.equal(Array.isArray(node.update_history), true);
   }
 });
+
+test('node detail contract requires bounded semantic relations', () => {
+  const detail = {
+    id: 'node-detail',
+    type: 'concept',
+    title: 'Node detail',
+    preview: null,
+    compiled_body: 'A complete body.',
+    source_chunk_ids: [],
+    body_version: 1,
+    status: 'active',
+    markers: [],
+    evidence: [],
+    update_history: [],
+    relations: {
+      items: [{
+        edge_id: 'edge-detail',
+        type: 'depends_on',
+        direction: 'outgoing',
+        bridge_text: null,
+        neighbor: { id: 'node-neighbor', title: 'Neighbor' }
+      }],
+      is_partial: true
+    }
+  };
+
+  const parsed = graphNodeSchema.parse(detail);
+  assert.equal(parsed.relations.items[0].bridge_text, '');
+  assert.equal(parsed.relations.items[0].neighbor.title, 'Neighbor');
+  assert.equal(parsed.relations.is_partial, true);
+  const { relations: _relations, ...withoutRelations } = detail;
+  assert.equal(graphNodeSchema.safeParse(withoutRelations).success, false);
+  assert.equal('body_sections' in parsed, false);
+  assert.equal('body_max_words' in parsed, false);
+});
+
 
 test('graph workspace projection changes visible edges without changing graph truth', () => {
   const snapshot = graphSnapshotFixture();
@@ -1521,35 +1559,35 @@ test('review tray labels and preserves exact mutation text for informed review',
         type: 'node',
         mutation_payload: { compiled_body: 'Exact new node body.' }
       }),
-      { field: 'compiled_body', label: 'Proposed node body', text: 'Exact new node body.' }
+      { label: 'Proposed node body', text: 'Exact new node body.' }
     ],
     [
       reviewItemFixture({
         type: 'node_body_update',
         mutation_payload: { section_text: 'Exact section to append.' }
       }),
-      { field: 'section_text', label: 'Section to append', text: 'Exact section to append.' }
+      { label: 'Section to append', text: 'Exact section to append.' }
     ],
     [
       reviewItemFixture({
         type: 'node_body_update',
         mutation_payload: { compiled_body: 'Exact replacement body.' }
       }),
-      { field: 'compiled_body', label: 'Replacement body', text: 'Exact replacement body.' }
+      { label: 'Replacement body', text: 'Exact replacement body.' }
     ],
     [
       reviewItemFixture({
         type: 'edge',
         mutation_payload: { bridge_text: 'Exact new bridge.' }
       }),
-      { field: 'bridge_text', label: 'Proposed bridge', text: 'Exact new bridge.' }
+      { label: 'Proposed bridge', text: 'Exact new bridge.' }
     ],
     [
       reviewItemFixture({
         type: 'edge_bridge_update',
         mutation_payload: { bridge_text: 'Exact replacement bridge.' }
       }),
-      { field: 'bridge_text', label: 'Replacement bridge', text: 'Exact replacement bridge.' }
+      { label: 'Replacement bridge', text: 'Exact replacement bridge.' }
     ]
   ]) {
     assert.deepEqual(reviewMutationPreview(item), expected);
@@ -1663,11 +1701,6 @@ function graphSnapshotFixture() {
     source_chunk_ids: [`chunk_${index + 1}`],
     evidence: [],
     body_version: 1,
-    body_sections: [{
-      id: `${id}:section:1`,
-      index: 1,
-      content: `${title} keeps the graph readable and evidence-backed.`
-    }],
     update_history: []
   }));
 

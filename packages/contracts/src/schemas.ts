@@ -1,6 +1,11 @@
 import { z } from 'zod';
 
-import { BRAIN_PROVIDER_IDS, CHAT_MESSAGE_MAX_CHARACTERS, RUNTIME_FAILURE_KINDS } from './appCommands.ts';
+import {
+  BRAIN_PROVIDER_IDS,
+  BRAIN_REASONING_EFFORTS,
+  CHAT_MESSAGE_MAX_CHARACTERS,
+  RUNTIME_FAILURE_KINDS
+} from './appCommands.ts';
 import { GRAPH_EDGE_TYPES, GRAPH_NODE_TYPES, NODE_BODY_MAX_CHARACTERS } from './graph.ts';
 import type {
   CreateGraphExtractionJobResult,
@@ -30,7 +35,7 @@ import type {
   UpdateNodeBodyResult,
   WorkspaceState
 } from './appCommands.ts';
-import type { GraphCanvasNode, GraphCanvasSnapshot, GraphNode, GraphThreadMessage } from './graph.ts';
+import type { GraphCanvasNode, GraphCanvasSnapshot, GraphNodeDetail, GraphThreadMessage } from './graph.ts';
 import type { GraphReviewQueueReadModel } from './review.ts';
 import type { GraphContextPacket, NodeContextPacket } from './retrieval.ts';
 
@@ -102,12 +107,6 @@ export const evidenceRecordSchema = z.object({
   source: sourceRefSchema.optional()
 }).passthrough();
 
-const nodeBodySectionSchema = z.object({
-  id: z.string(),
-  index: z.number(),
-  content: z.string()
-}).passthrough();
-
 const nodeBodyVersionSchema = z.object({
   id: z.string(),
   version_number: z.number(),
@@ -116,6 +115,22 @@ const nodeBodyVersionSchema = z.object({
   is_current: z.boolean(),
   source_chunk_ids: stringArraySchema.optional(),
   evidence: z.array(evidenceRecordSchema).optional()
+}).passthrough();
+
+const graphNodeRelationSchema = z.object({
+  edge_id: z.string().min(1),
+  type: graphEdgeTypeSchema,
+  direction: z.enum(['outgoing', 'incoming']),
+  bridge_text: nullableStringSchema.transform((value) => value ?? ''),
+  neighbor: z.object({
+    id: z.string().min(1),
+    title: z.string()
+  })
+}).passthrough();
+
+const graphNodeRelationsSchema = z.object({
+  items: z.array(graphNodeRelationSchema),
+  is_partial: z.boolean()
 }).passthrough();
 
 export const graphNodeSchema = z.object({
@@ -127,15 +142,14 @@ export const graphNodeSchema = z.object({
   source_chunk_ids: stringArraySchema.default([]),
   body_version: z.number(),
   body_version_id: z.string().optional(),
-  body_max_words: z.number().optional(),
   status: truthStatusSchema,
   markers: stringArraySchema.default([]),
   evidence: z.array(evidenceRecordSchema).default([]),
-  body_sections: z.array(nodeBodySectionSchema).default([]),
   update_history: z.array(nodeBodyVersionSchema).default([]),
+  relations: graphNodeRelationsSchema,
   created_at: z.string().optional(),
   updated_at: z.string().optional()
-}).passthrough() as z.ZodType<GraphNode>;
+}).passthrough() as z.ZodType<GraphNodeDetail>;
 
 export const graphCanvasNodeSchema = z.object({
   id: z.string().min(1),
@@ -437,13 +451,18 @@ export const importSourceFileResultSchema = z.object({
   chunkCount: z.number()
 }).passthrough() as z.ZodType<ImportSourceFileResult>;
 
+const brainReasoningEffortSchema = z.enum(BRAIN_REASONING_EFFORTS);
 export const brainSettingsSchema = z.object({
   providerId: brainProviderIdSchema,
   model: z.string(),
   endpoint: z.string(),
   authProfile: z.string(),
   credentialConfigured: z.boolean(),
-  updatedAt: nullableStringSchema
+  updatedAt: nullableStringSchema,
+  effectiveModel: z.string().optional(),
+  modelSource: z.enum(['selected', 'soma_default']).optional(),
+  defaultReasoningEffort: brainReasoningEffortSchema.nullable().optional(),
+  graphReasoningEffort: brainReasoningEffortSchema.nullable().optional()
 }).passthrough() as z.ZodType<BrainSettings>;
 
 export const brainRuntimeStatusSchema = z.object({
@@ -467,6 +486,8 @@ export const saveBrainSettingsInputSchema = z.object({
   model: z.string(),
   endpoint: z.string(),
   authProfile: z.string(),
+  defaultReasoningEffort: brainReasoningEffortSchema.optional(),
+  graphReasoningEffort: brainReasoningEffortSchema.optional(),
   apiKey: z.string().nullable().optional(),
   clearApiKey: z.boolean().optional()
 }).passthrough() as z.ZodType<SaveBrainSettingsInput>;
@@ -689,6 +710,7 @@ export const getJobArgsSchema = z.object({
 export const graphChatTurnArgsSchema = z.object({
   content: chatMessageContentSchema,
   focus_node_ids: z.array(z.string().trim().min(1)).optional(),
+  request_id: z.string().trim().min(1),
   reading_context: sourceReadingContextSchema.nullable().optional(),
   capture_graph_changes: z.boolean().optional()
 });
@@ -700,7 +722,17 @@ export const undoGraphPatchArgsSchema = z.object({
 export const nodeMessageArgsSchema = z.object({
   node_id: z.string().trim().min(1),
   content: chatMessageContentSchema,
+  request_id: z.string().trim().min(1),
   capture_graph_changes: z.boolean()
+});
+
+export const cancelChatTurnArgsSchema = z.object({
+  request_id: z.string().trim().min(1)
+});
+
+export const cancelChatTurnResultSchema = z.object({
+  requestId: z.string(),
+  cancelled: z.boolean()
 });
 
 export const nodeMessagesArgsSchema = z.object({

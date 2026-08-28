@@ -480,6 +480,18 @@ mod tests {
     assert_eq!(snapshot["edges"].as_array().unwrap().len(), 1);
     assert_eq!(snapshot["edges"][0]["type"], "supports");
     assert_eq!(snapshot["edges"][0]["bridge_text"], Value::Null);
+    let edge = &snapshot["edges"][0];
+    let source_detail = store.load_graph_node_detail(edge["source_node_id"].as_str().unwrap()).unwrap();
+    let source_relation = &source_detail["relations"]["items"][0];
+    assert_eq!(source_relation["type"], "supports");
+    assert_eq!(source_relation["direction"], "outgoing");
+    assert_eq!(source_relation["bridge_text"], "");
+    assert_eq!(source_relation["neighbor"]["title"], "Target Node");
+
+    let target_detail = store.load_graph_node_detail(edge["target_node_id"].as_str().unwrap()).unwrap();
+    let target_relation = &target_detail["relations"]["items"][0];
+    assert_eq!(target_relation["direction"], "incoming");
+    assert_eq!(target_relation["neighbor"]["title"], "Source Node");
     assert_eq!(snapshot["edges"][0]["source_chunk_ids"][0], "chunk_1");
   }
 
@@ -507,7 +519,9 @@ mod tests {
 
     let detail = store.load_graph_node_detail(canvas_node["id"].as_str().unwrap()).unwrap();
     assert_eq!(detail["compiled_body"], long_body);
-    assert_eq!(detail["body_sections"].as_array().unwrap().len(), 0);
+    assert!(detail.get("body_sections").is_none());
+    assert!(detail.get("body_max_words").is_none());
+    assert!(detail["relations"]["items"].as_array().unwrap().is_empty());
     assert!(!detail["evidence"].as_array().unwrap().is_empty());
   }
 

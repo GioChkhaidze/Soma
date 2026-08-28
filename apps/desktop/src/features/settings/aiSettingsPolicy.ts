@@ -1,5 +1,7 @@
 import {
   BRAIN_PROVIDER_IDS,
+  BRAIN_REASONING_EFFORTS,
+  type BrainReasoningEffort,
   type BrainSettings
 } from '../../../../../packages/contracts/src/appCommands.ts';
 import {
@@ -33,7 +35,11 @@ export function defaultAiSettings(): AiSettingsDraft {
     endpoint: '',
     authProfile: '',
     credentialConfigured: false,
-    updatedAt: null
+    updatedAt: null,
+    effectiveModel: 'gpt-5.6-luna',
+    modelSource: 'soma_default',
+    defaultReasoningEffort: 'medium',
+    graphReasoningEffort: 'xhigh'
   };
 }
 
@@ -50,6 +56,18 @@ export function sanitizeAiSettings(value: unknown): AiSettingsDraft {
       : '',
     credentialConfigured: !providerChanged && input.credentialConfigured === true,
     updatedAt: typeof input.updatedAt === 'string' ? input.updatedAt : null,
+    effectiveModel: !providerChanged && typeof input.effectiveModel === 'string'
+      ? input.effectiveModel
+      : provider.id === 'codex_sdk' ? 'gpt-5.6-luna' : undefined,
+    modelSource: !providerChanged && (input.modelSource === 'selected' || input.modelSource === 'soma_default')
+      ? input.modelSource
+      : provider.id === 'codex_sdk' ? 'soma_default' : undefined,
+    defaultReasoningEffort: !providerChanged
+      ? reasoningEffort(input.defaultReasoningEffort, 'medium')
+      : 'medium',
+    graphReasoningEffort: !providerChanged
+      ? reasoningEffort(input.graphReasoningEffort, 'xhigh')
+      : 'xhigh',
     credentialConfiguredByProvider: sanitizeProviderCredentialState(input.credentialConfiguredByProvider)
   });
 }
@@ -149,6 +167,12 @@ function supportedProviderPolicyById(providerId: unknown): ProviderPolicy {
   return provider.groupId === 'unsupported'
     ? providerPolicyById(defaultProviderId)
     : provider;
+}
+
+function reasoningEffort(value: unknown, fallback: BrainReasoningEffort): BrainReasoningEffort {
+  return typeof value === 'string' && BRAIN_REASONING_EFFORTS.includes(value as BrainReasoningEffort)
+    ? value as BrainReasoningEffort
+    : fallback;
 }
 
 function sanitizeProviderCredentialState(value: unknown): AiProviderCredentialState {

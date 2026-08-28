@@ -1,4 +1,4 @@
-use serde_json::Value;
+use serde_json::{json, Value};
 use tauri::{AppHandle, Manager};
 use tauri_plugin_dialog::DialogExt;
 
@@ -6,8 +6,9 @@ use crate::brain_settings::{
   get_brain_settings as read_brain_settings, load_brain_settings, save_brain_settings as persist_brain_settings,
   settings_from_value,
 };
+use crate::chat_cancellation;
 use crate::chat_turns::{
-  send_graph_chat_turn_with_reading_context_and_credentials, send_node_chat_turn_with_credentials,
+  send_graph_chat_turn_with_reading_context_and_credentials, send_node_chat_turn_with_credentials, ChatRuntimeExecution,
 };
 use crate::error::CommandResult;
 use crate::jobs::{
@@ -238,6 +239,7 @@ pub async fn persist_node_position(
 #[tauri::command(rename_all = "snake_case")]
 pub async fn send_graph_chat_turn(
   app: AppHandle,
+  request_id: String,
   content: String,
   focus_node_ids: Option<Vec<String>>,
   reading_context: Option<Value>,
@@ -246,7 +248,8 @@ pub async fn send_graph_chat_turn(
   let paths = require_current_workspace(&app)?;
   let runtime = runtime_descriptor(&load_brain_settings(&app)?);
   let credentials = stored_credentials(&app)?;
-  captured_workspace_command(paths, "Graph chat worker failed", move |paths| {
+  let cancellation = chat_cancellation::begin(&request_id);
+  let result = captured_workspace_command(paths, "Graph chat worker failed", move |paths| {
     send_graph_chat_turn_with_reading_context_and_credentials(
       &paths,
       &runtime,
@@ -254,10 +257,12 @@ pub async fn send_graph_chat_turn(
       focus_node_ids.unwrap_or_default(),
       reading_context,
       capture_graph_changes_or_default(capture_graph_changes),
-      &credentials,
+      ChatRuntimeExecution::new(&credentials, cancellation),
     )
   })
-  .await
+  .await;
+  chat_cancellation::finish(&request_id);
+  result
 }
 
 #[tauri::command]
@@ -270,23 +275,35 @@ pub async fn list_graph_messages(app: AppHandle) -> CommandResult<Value> {
 pub async fn send_node_chat_turn(
   app: AppHandle,
   node_id: String,
+  request_id: String,
   content: String,
   capture_graph_changes: Option<bool>,
 ) -> CommandResult<Value> {
   let paths = require_current_workspace(&app)?;
   let runtime = runtime_descriptor(&load_brain_settings(&app)?);
   let credentials = stored_credentials(&app)?;
-  captured_workspace_command(paths, "Node chat worker failed", move |paths| {
+  let cancellation = chat_cancellation::begin(&request_id);
+  let result = captured_workspace_command(paths, "Node chat worker failed", move |paths| {
     send_node_chat_turn_with_credentials(
       &paths,
       &runtime,
       &node_id,
       &content,
       capture_graph_changes_or_default(capture_graph_changes),
-      &credentials,
+      ChatRuntimeExecution::new(&credentials, cancellation),
     )
   })
-  .await
+  .await;
+  chat_cancellation::finish(&request_id);
+  result
+}
+
+#[tauri::command(rename_all = "snake_case")]
+pub fn cancel_chat_turn(request_id: String) -> Value {
+  json!({
+    "requestId": request_id,
+    "cancelled": chat_cancellation::cancel(&request_id)
+  })
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -390,7 +407,15 @@ fn codex_enable_settings_payload(current: &crate::brain_settings::BrainSettings,
     "providerId": "codex_sdk",
     "model": draft.get("model").and_then(Value::as_str).unwrap_or(&current.model),
     "endpoint": "",
-    "authProfile": draft.get("authProfile").and_then(Value::as_str).unwrap_or(&current.auth_profile)
+    "authProfile": draft.get("authProfile").and_then(Value::as_str).unwrap_or(&current.auth_profile),
+    "defaultReasoningEffort": draft
+      .get("defaultReasoningEffort")
+      .and_then(Value::as_str)
+      .unwrap_or(&current.default_reasoning_effort),
+    "graphReasoningEffort": draft
+      .get("graphReasoningEffort")
+      .and_then(Value::as_str)
+      .unwrap_or(&current.graph_reasoning_effort)
   })
 }
 
@@ -455,12 +480,15 @@ mod tests {
       auth_profile: "router".to_string(),
       credential_configured: true,
       updated_at: Some("2026-07-04T00:00:00Z".to_string()),
+      ..BrainSettings::default()
     };
     let payload = codex_enable_settings_payload(
       &current,
       &json!({
         "model": "gpt-5.4",
-        "authProfile": "work"
+        "authProfile": "work",
+        "defaultReasoningEffort": "low",
+        "graphReasoningEffort": "max"
       }),
     );
 
@@ -468,5 +496,7 @@ mod tests {
     assert_eq!(payload["model"], "gpt-5.4");
     assert_eq!(payload["authProfile"], "work");
     assert_eq!(payload["endpoint"], "");
+    assert_eq!(payload["defaultReasoningEffort"], "low");
+    assert_eq!(payload["graphReasoningEffort"], "max");
   }
 }

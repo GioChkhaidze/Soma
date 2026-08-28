@@ -28,6 +28,8 @@ test('paper chat waits for current-page extraction before sending', async ({ pag
   const sendButton = page.getByRole('button', { name: 'Send message' });
   await chatInput.fill('Use the page that is still loading.');
   await expect(chatForm).toHaveAttribute('aria-busy', 'true');
+  await expect(page.getByLabel('Paper context')).toHaveCount(0);
+  await expect(page.getByText('Reading current page...')).toHaveCount(0);
   await expect(sendButton).toBeDisabled();
   await chatInput.press('Enter');
   expect(await page.evaluate(() => (
@@ -35,7 +37,7 @@ test('paper chat waits for current-page extraction before sending', async ({ pag
   ).__lastGraphChatArgs)).toBeUndefined();
 
   releaseWorker();
-  await expect(page.getByLabel('Paper context')).toContainText('p. 1 / 2');
+  await expect(page.getByLabel('Paper context')).toHaveCount(0);
   await expect(chatForm).toHaveAttribute('aria-busy', 'false');
   await expect(sendButton).toBeEnabled();
   await chatInput.press('Enter');
@@ -62,16 +64,13 @@ test('paper state and chat dock stay stable while reading', async ({ page }) => 
   const reader = page.locator('.paperReader');
   const viewport = page.locator('.paperViewport');
   const zoom = page.locator('.paperZoom');
-  const context = page.getByLabel('Paper context');
   await expect(reader).toBeVisible();
   await expect(page.locator('.textLayer span').first()).toContainText('Soma paper selection');
-  await expect(context).toBeVisible();
+  await expect(page.getByLabel('Paper context')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Graph capture off' })).toBeVisible();
 
   await selectText(page.locator('.textLayer span').first());
   await expect(page.locator('.paperSelection')).toContainText('Selection');
-  await expect(context.locator('strong')).toContainText('Selection from p. 1');
-  await selectAcrossPaperAndChat(page);
   await expect(page.locator('.paperSelection')).toHaveAttribute('title', 'Soma paper selection on page one.');
 
   await expect.poll(() => viewport.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true);
@@ -115,7 +114,6 @@ test('paper state and chat dock stay stable while reading', async ({ page }) => 
   expect(await requiredBox(dock)).toEqual(initialDockBox);
   expect(await requiredBox(composer)).toEqual(initialComposerBox);
   await expectOpaqueSurface(composer);
-  await expectOpaqueSurface(context);
 
   await chatInput.press('Enter');
   const transcript = page.locator('.graphChatTranscriptInner');
@@ -187,7 +185,6 @@ test('paper state and chat dock stay stable while reading', async ({ page }) => 
   expect(await viewport.evaluate((element) => element.scrollTop)).toBe(activePageScroll);
   expect(await zoom.textContent()).toBe(savedZoom);
   await expect(page.locator('.paperSelection')).toContainText('Selection');
-  await expect(context.locator('strong')).toContainText('Selection from p. 1');
   await expect(page.getByRole('button', { name: 'Graph capture on' })).toBeVisible();
 
   await chatInput.fill('Keep this explanation in the graph.');
@@ -207,7 +204,6 @@ test('paper state and chat dock stay stable while reading', async ({ page }) => 
   await expect(undo).toHaveCount(0);
   await page.getByRole('button', { name: 'Clear selection from page 1' }).click();
   await expect(page.locator('.paperSelection')).toHaveCount(0);
-  await expect(context.locator('strong')).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Close paper' }).click();
   await expect(reader).toHaveCount(0);
@@ -450,20 +446,6 @@ async function selectText(text: Locator) {
   });
 }
 
-async function selectAcrossPaperAndChat(page: Page) {
-  await page.evaluate(() => {
-    const start = document.querySelector('.textLayer span')?.firstChild;
-    const end = document.querySelector('[aria-label="Paper context"] strong')?.firstChild;
-    if (!start || !end) throw new Error('Expected paper and chat text for cross-surface selection');
-    const range = document.createRange();
-    range.setStart(start, 0);
-    range.setEnd(end, end.textContent?.length ?? 0);
-    const selection = window.getSelection();
-    selection?.removeAllRanges();
-    selection?.addRange(range);
-    document.dispatchEvent(new Event('selectionchange'));
-  });
-}
 
 async function expectOpaqueSurface(surface: Locator) {
   const color = await surface.evaluate((element) => getComputedStyle(element).backgroundColor);

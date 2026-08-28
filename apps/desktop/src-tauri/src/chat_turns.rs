@@ -1,14 +1,25 @@
 use std::collections::{HashMap, HashSet};
 
 use serde_json::{json, Value};
-use soma_ai_runtime::CredentialResolver;
+use soma_ai_runtime::{AgentTaskCancellation, CredentialResolver};
 
 use crate::chat_runtime::RuntimeChatTurnResult;
 use crate::contracts::{complete_graph_patch, graph_patch_is_empty};
 use crate::error::{is_storage_busy_message, CommandError, CommandResult, STORAGE_BUSY_MESSAGE};
 use crate::repository::WorkspaceStore;
-use crate::runtime_adapters::run_chat_turn_with_credentials;
+use crate::runtime_adapters::run_chat_turn_with_credentials_and_cancellation;
 use crate::workspace::WorkspacePaths;
+
+pub struct ChatRuntimeExecution<'a> {
+  credentials: &'a dyn CredentialResolver,
+  cancellation: AgentTaskCancellation,
+}
+
+impl<'a> ChatRuntimeExecution<'a> {
+  pub fn new(credentials: &'a dyn CredentialResolver, cancellation: AgentTaskCancellation) -> Self {
+    Self { credentials, cancellation }
+  }
+}
 
 #[cfg(test)]
 pub fn send_graph_chat_turn_with_credentials(
@@ -25,7 +36,7 @@ pub fn send_graph_chat_turn_with_credentials(
     focus_node_ids,
     None,
     true,
-    credentials,
+    ChatRuntimeExecution::new(credentials, AgentTaskCancellation::new()),
   )
 }
 
@@ -36,17 +47,18 @@ pub fn send_graph_chat_turn_with_reading_context_and_credentials(
   focus_node_ids: Vec<String>,
   reading_context: Option<Value>,
   capture_graph_changes: bool,
-  credentials: &dyn CredentialResolver,
+  execution: ChatRuntimeExecution<'_>,
 ) -> CommandResult<Value> {
   let user = {
     let mut store = WorkspaceStore::open(&paths.database_path)?;
     store.append_graph_message_with_reading_context(content, focus_node_ids, reading_context, capture_graph_changes)?
   };
   let context_packet = user["context_packet"].clone();
-  let runtime_result = runtime_result_or_failure(run_chat_turn_with_credentials(
+  let runtime_result = runtime_result_or_failure(run_chat_turn_with_credentials_and_cancellation(
     runtime,
     &chat_turn_request("graph_chat", &context_packet, capture_graph_changes),
-    credentials,
+    execution.credentials,
+    execution.cancellation,
   ));
   let Some(answer) = runtime_result.assistant_message.as_deref() else {
     return Ok(chat_turn_failure_result(user, context_packet, runtime_result, no_patch_result()));
@@ -102,17 +114,18 @@ pub fn send_node_chat_turn_with_credentials(
   node_id: &str,
   content: &str,
   capture_graph_changes: bool,
-  credentials: &dyn CredentialResolver,
+  execution: ChatRuntimeExecution<'_>,
 ) -> CommandResult<Value> {
   let user = {
     let mut store = WorkspaceStore::open(&paths.database_path)?;
     store.append_node_message_with_capture(node_id, content, capture_graph_changes)?
   };
   let context_packet = user["context_packet"].clone();
-  let runtime_result = runtime_result_or_failure(run_chat_turn_with_credentials(
+  let runtime_result = runtime_result_or_failure(run_chat_turn_with_credentials_and_cancellation(
     runtime,
     &chat_turn_request("node_chat", &context_packet, capture_graph_changes),
-    credentials,
+    execution.credentials,
+    execution.cancellation,
   ));
   let Some(answer) = runtime_result.assistant_message.as_deref() else {
     return Ok(chat_turn_failure_result(user, context_packet, runtime_result, no_patch_result()));

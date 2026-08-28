@@ -11,6 +11,13 @@ export function chatMessageLengthError(content: string) {
   if (Array.from(content).length <= CHAT_MESSAGE_MAX_CHARACTERS) return null;
   return `Chat messages are limited to ${CHAT_MESSAGE_MAX_CHARACTERS.toLocaleString('en-US')} characters.`;
 }
+export function createChatRequestId(scope: 'graph' | 'node') {
+  const suffix = typeof globalThis.crypto?.randomUUID === 'function'
+    ? globalThis.crypto.randomUUID()
+    : `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  return `${scope}_${suffix}`;
+}
+
 
 export function compileFailureMessage(result: RunCompileJobResult) {
   const details = result.message ? ` Details: ${result.message}` : '';

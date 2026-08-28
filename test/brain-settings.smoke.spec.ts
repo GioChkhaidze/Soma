@@ -9,6 +9,19 @@ const storedProviderSettings = {
   updatedAt: '2026-07-25T00:00:00.000Z'
 };
 
+const storedCodexSettings = {
+  providerId: 'codex_sdk',
+  model: 'gpt-5.6-luna',
+  endpoint: '',
+  authProfile: '',
+  credentialConfigured: false,
+  updatedAt: '2026-07-25T00:00:00.000Z',
+  effectiveModel: 'gpt-5.6-luna',
+  modelSource: 'selected',
+  defaultReasoningEffort: 'medium',
+  graphReasoningEffort: 'xhigh'
+};
+
 test('provider family follows settings that finish loading after the panel opens', async ({ page }) => {
   await installDelayedSettingsMock(page);
   await openSettings(page);
@@ -32,6 +45,27 @@ test('delayed settings do not replace a provider family chosen while loading', a
 
   await expect(familyButton(page, 'Local')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByLabel('Selected brain')).toContainText('Ollama');
+});
+
+test('Codex model and efforts save as one active Brain policy', async ({ page }) => {
+  await installCodexPolicyMock(page);
+  await openSettings(page);
+
+  await page.getByRole('radio', { name: 'GPT-5.6 Terra' }).click();
+  await page.getByLabel('Chat effort').selectOption('low');
+  await page.getByLabel('Graph effort').selectOption('max');
+
+  await expect(page.getByLabel('Selected brain'))
+    .toContainText(/Draft: gpt-5\.6-terra .* chat low .* graph max/);
+
+  await page.locator('.aiSettingsFooter button').click();
+  await expect.poll(() => savedBrainPolicy(page)).toMatchObject({
+    model: 'gpt-5.6-terra',
+    defaultReasoningEffort: 'low',
+    graphReasoningEffort: 'max'
+  });
+  await expect(page.getByLabel('Selected brain'))
+    .toContainText(/Active: gpt-5\.6-terra .* chat low .* graph max/);
 });
 
 test('one save owns the request and preserves a secret typed while it finishes', async ({ page }) => {
@@ -165,6 +199,38 @@ async function installDelayedSaveMock(page: Page) {
   }, storedProviderSettings);
 }
 
+async function installCodexPolicyMock(page: Page) {
+  await page.addInitScript((settings) => {
+    const state = globalThis as typeof globalThis & SettingsTestState;
+    state.isTauri = true;
+    state.__TAURI_INTERNALS__ = {
+      invoke: async (command, args) => {
+        if (command === 'get_current_workspace') {
+          return {
+            has_workspace: false,
+            workspace_dir: null,
+            database_path: null
+          };
+        }
+        if (command === 'get_brain_settings') return settings;
+        const payload = args?.settings ?? {};
+        if (command === 'save_brain_settings') {
+          state.__savedBrainPolicy = payload;
+          return {
+            ...settings,
+            ...payload,
+            effectiveModel: String(payload.model ?? settings.effectiveModel),
+            modelSource: 'selected',
+            credentialConfigured: false,
+            updatedAt: '2026-07-25T01:00:00.000Z'
+          };
+        }
+        throw new Error(`Unexpected Tauri command in Codex policy test: ${command}`);
+      }
+    };
+  }, storedCodexSettings);
+}
+
 async function installEndpointAuthorityMock(page: Page) {
   await page.addInitScript((settings) => {
     const state = globalThis as typeof globalThis & SettingsTestState;
@@ -230,6 +296,12 @@ async function saveCount(page: Page) {
   ));
 }
 
+async function savedBrainPolicy(page: Page) {
+  return page.evaluate(() => (
+    (globalThis as typeof globalThis & SettingsTestState).__savedBrainPolicy ?? {}
+  ));
+}
+
 async function capturedEndpoint(page: Page, key: '__listedEndpoint' | '__savedEndpoint') {
   return page.evaluate((field) => (
     (globalThis as typeof globalThis & SettingsTestState)[field]
@@ -245,6 +317,7 @@ type SettingsTestState = {
   __brainSettingsDelivered?: boolean;
   __brainSaveCount?: number;
   __resolveBrainSave?: () => void;
+  __savedBrainPolicy?: Record<string, unknown>;
   __listedEndpoint?: unknown;
   __savedEndpoint?: unknown;
 };

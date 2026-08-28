@@ -71,6 +71,7 @@ fn codex_profile_descriptor_uses_profile_without_credentials() {
     auth_profile: "work".to_string(),
     credential_configured: false,
     updated_at: None,
+    ..BrainSettings::default()
   };
 
   let descriptor = runtime_descriptor(&settings);
@@ -78,6 +79,29 @@ fn codex_profile_descriptor_uses_profile_without_credentials() {
   assert_eq!(descriptor["adapter"]["profile"], "work");
   assert_eq!(descriptor["authProfile"], "work");
   assert!(descriptor.get("apiKey").is_none());
+}
+
+#[test]
+fn default_codex_descriptor_uses_luna_with_deep_graph_reasoning() {
+  let descriptor = runtime_descriptor(&BrainSettings::default());
+
+  assert_eq!(descriptor["model"], "gpt-5.6-luna");
+  assert_eq!(descriptor["chatReasoningEffort"], "medium");
+  assert_eq!(descriptor["reasoningEffort"], "xhigh");
+}
+
+#[test]
+fn codex_descriptor_uses_saved_chat_and_graph_efforts() {
+  let settings = BrainSettings {
+    default_reasoning_effort: "low".to_string(),
+    graph_reasoning_effort: "max".to_string(),
+    ..BrainSettings::default()
+  };
+
+  let descriptor = runtime_descriptor(&settings);
+
+  assert_eq!(descriptor["chatReasoningEffort"], "low");
+  assert_eq!(descriptor["reasoningEffort"], "max");
 }
 
 #[test]
@@ -89,6 +113,7 @@ fn claude_code_descriptor_ignores_legacy_auth_profile() {
     auth_profile: "legacy-profile".to_string(),
     credential_configured: false,
     updated_at: None,
+    ..BrainSettings::default()
   };
 
   let descriptor = runtime_descriptor(&settings);
@@ -108,6 +133,7 @@ fn api_provider_descriptor_is_redacted_and_configured() {
     auth_profile: String::new(),
     credential_configured: true,
     updated_at: None,
+    ..BrainSettings::default()
   };
 
   let descriptor = runtime_descriptor(&settings);
@@ -128,6 +154,7 @@ fn openrouter_descriptor_uses_default_compatible_endpoint() {
     auth_profile: String::new(),
     credential_configured: true,
     updated_at: None,
+    ..BrainSettings::default()
   };
 
   let descriptor = runtime_descriptor(&settings);
@@ -226,6 +253,7 @@ fn claude_descriptor_uses_anthropic_messages_endpoint() {
     auth_profile: String::new(),
     credential_configured: true,
     updated_at: None,
+    ..BrainSettings::default()
   };
 
   let descriptor = runtime_descriptor(&settings);
@@ -245,6 +273,7 @@ fn ollama_descriptor_uses_registry_endpoint() {
     auth_profile: String::new(),
     credential_configured: false,
     updated_at: None,
+    ..BrainSettings::default()
   };
 
   let descriptor = runtime_descriptor(&settings);
@@ -263,6 +292,7 @@ fn deepseek_descriptor_uses_full_chat_endpoint_default() {
     auth_profile: String::new(),
     credential_configured: true,
     updated_at: None,
+    ..BrainSettings::default()
   };
 
   let descriptor = runtime_descriptor(&settings);
@@ -281,6 +311,7 @@ fn vercel_gateway_descriptor_uses_standard_v1_base_url() {
     auth_profile: String::new(),
     credential_configured: true,
     updated_at: None,
+    ..BrainSettings::default()
   };
 
   let descriptor = runtime_descriptor(&settings);
@@ -299,6 +330,7 @@ fn zai_descriptor_uses_current_compatible_endpoint() {
     auth_profile: String::new(),
     credential_configured: true,
     updated_at: None,
+    ..BrainSettings::default()
   };
 
   let descriptor = runtime_descriptor(&settings);
@@ -432,9 +464,10 @@ fn codex_profile_command_is_writable_and_captures_final_message() {
   let _guard = RUNTIME_ENV_LOCK.lock().unwrap();
   let previous_command = std::env::var_os("SOMA_CODEX_COMMAND");
   std::env::remove_var("SOMA_CODEX_COMMAND");
-  let runtime = json!({
+  let mut runtime = json!({
     "providerId": "codex_sdk",
     "model": "gpt-test",
+    "reasoningEffort": "medium",
     "adapter": {
       "kind": "codex_sdk_profile",
       "profile": "default"
@@ -450,6 +483,14 @@ fn codex_profile_command_is_writable_and_captures_final_message() {
   assert!(args.iter().any(|arg| arg == "--ephemeral"));
   assert!(args.windows(2).any(|pair| pair[0] == "--output-last-message" && pair[1] == "codex_final_message.txt"));
   assert!(args.windows(2).any(|pair| pair[0] == "--model" && pair[1] == "gpt-test"));
+  assert!(args.windows(2).any(|pair| { pair[0] == "--config" && pair[1] == "model_reasoning_effort=\"medium\"" }));
+
+  for effort in ["none", "max"] {
+    runtime["reasoningEffort"] = json!(effort);
+    let (_, effort_args) = profile_command_spec(&runtime, &runtime["adapter"], ProfileCommand::Codex).unwrap();
+    let expected = format!("model_reasoning_effort=\"{effort}\"");
+    assert!(effort_args.windows(2).any(|pair| pair[0] == "--config" && pair[1] == expected));
+  }
   restore_env_var("SOMA_CODEX_COMMAND", previous_command);
 }
 

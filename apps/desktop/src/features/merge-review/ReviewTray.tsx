@@ -72,7 +72,7 @@ export function ReviewTray({ readModel, nodes, busy, onAction }: ReviewTrayProps
                       <strong>{item.title}</strong>
                       <span>{mutation ? `${mutation.label}: ${mutation.text}` : item.reason}</span>
                     </span>
-                    <small>{item.status}</small>
+                    <small>{reviewStatusLabel(item.status)}</small>
                   </button>
                 </li>
               );
@@ -105,6 +105,13 @@ type ReviewTrayItemProps = {
   busy: boolean;
   onAction: (proposalId: string, action: ReviewAction) => void;
 };
+
+function reviewStatusLabel(status: string) {
+  if (status === 'proposed') return 'Ready';
+  if (status === 'deferred') return 'Later';
+  if (status === 'superseded') return 'Replaced';
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
 
 function ReviewTrayItem({ item, nodes, busy, onAction }: ReviewTrayItemProps) {
   const actions = reviewItemActions(item);

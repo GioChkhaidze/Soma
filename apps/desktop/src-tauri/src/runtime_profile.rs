@@ -7,8 +7,8 @@ use std::time::Duration;
 
 use serde_json::{json, Value};
 use soma_ai_runtime::{
-  AgentTaskRequest, AgentTaskResult, AgentTaskStatus, AiRuntimeError, CliAgentConfig, CliAgentRuntime, CliPromptMode,
-  ProviderId,
+  AgentTaskCancellation, AgentTaskRequest, AgentTaskResult, AgentTaskStatus, AiRuntimeError, CliAgentConfig,
+  CliAgentRuntime, CliPromptMode, ProviderId,
 };
 use uuid::Uuid;
 
@@ -27,6 +27,7 @@ pub(super) const CODEX_STORAGE_BUSY_MESSAGE: &str =
   "Codex profile storage is busy. Wait for the current Codex run to finish, then try again.";
 
 const PROFILE_RUNTIME_TIMEOUT: Duration = Duration::from_secs(240);
+const CHAT_RUNTIME_TIMEOUT: Duration = Duration::from_secs(120);
 const CODEX_PROBE_TIMEOUT_MS: u64 = 2_000;
 const CODEX_STORAGE_BUSY_RETRY_DELAYS: [Duration; 2] = [Duration::from_millis(250), Duration::from_millis(750)];
 
@@ -132,14 +133,35 @@ pub fn authorize_codex_brain_status() -> Value {
   }
 }
 
+#[cfg(test)]
 pub(super) fn run_profile_chat_turn(
   runtime: &Value,
   adapter: &Value,
   request: &Value,
   command_kind: ProfileCommand,
 ) -> CommandResult<RuntimeChatTurnResult> {
+  run_profile_chat_turn_with_cancellation(runtime, adapter, request, command_kind, AgentTaskCancellation::new())
+}
+
+pub(super) fn run_profile_chat_turn_with_cancellation(
+  runtime: &Value,
+  adapter: &Value,
+  request: &Value,
+  command_kind: ProfileCommand,
+  cancellation: AgentTaskCancellation,
+) -> CommandResult<RuntimeChatTurnResult> {
   let adapter_kind = adapter_kind(adapter);
-  let Some(config) = profile_agent_config(runtime, adapter, command_kind) else {
+  let mut runtime = runtime.clone();
+  if matches!(command_kind, ProfileCommand::Codex) {
+    let captures_graph = request.get("capture_graph_changes").and_then(Value::as_bool).unwrap_or(false);
+    let effort_key = if captures_graph { "reasoningEffort" } else { "chatReasoningEffort" };
+    let fallback = if captures_graph { "xhigh" } else { "medium" };
+    let effort =
+      runtime.get(effort_key).and_then(Value::as_str).filter(|value| !value.is_empty()).unwrap_or(fallback).to_string();
+    runtime["reasoningEffort"] = json!(effort);
+  }
+
+  let Some(config) = profile_agent_config(&runtime, adapter, command_kind) else {
     return Ok(RuntimeChatTurnResult {
       adapter_kind,
       status: "failed",
@@ -156,7 +178,8 @@ pub(super) fn run_profile_chat_turn(
   let program = config.program.clone();
   let output = run_profile_agent_task_with_storage_retry(
     config,
-    AgentTaskRequest::new(temp_dir.path(), prompt, PROFILE_RUNTIME_TIMEOUT.as_millis() as u64),
+    AgentTaskRequest::new(temp_dir.path(), prompt, CHAT_RUNTIME_TIMEOUT.as_millis() as u64)
+      .with_cancellation(cancellation),
     command_kind,
   );
   let final_message = fs::read_to_string(temp_dir.path().join("codex_final_message.txt")).unwrap_or_default();
@@ -180,6 +203,18 @@ pub(super) fn run_profile_chat_turn(
   let stdout = output.stdout;
   let stderr = output.stderr;
   let stdout_truncated = output.stdout_truncated;
+  if output.status == AgentTaskStatus::Cancelled {
+    return Ok(RuntimeChatTurnResult {
+      adapter_kind,
+      status: "cancelled",
+      failure_kind: None,
+      message: "Stopped by you.".to_string(),
+      assistant_message: None,
+      used_graph_areas: Vec::new(),
+      proposed_graph_patch: None,
+    });
+  }
+
   if output.status == AgentTaskStatus::TimedOut {
     return Ok(RuntimeChatTurnResult {
       adapter_kind,
@@ -187,7 +222,7 @@ pub(super) fn run_profile_chat_turn(
       failure_kind: Some(RuntimeFailureKind::Timeout),
       message: format!(
         "Chat runtime timed out after {} seconds. {}",
-        PROFILE_RUNTIME_TIMEOUT.as_secs(),
+        CHAT_RUNTIME_TIMEOUT.as_secs(),
         profile_command_failure_message(command_kind, output.exit_code, &stdout, &stderr)
       ),
       assistant_message: None,
@@ -572,6 +607,7 @@ pub(super) fn profile_command_spec(
   }
 
   let model = runtime.get("model").and_then(Value::as_str).unwrap_or("").trim();
+  let reasoning_effort = runtime.get("reasoningEffort").and_then(Value::as_str).unwrap_or("").trim();
   let profile = adapter.get("profile").and_then(Value::as_str).unwrap_or("default");
 
   match command_kind {
@@ -594,6 +630,10 @@ pub(super) fn profile_command_spec(
       if !model.is_empty() {
         args.push("--model".to_string());
         args.push(model.to_string());
+      }
+      if matches!(reasoning_effort, "none" | "low" | "medium" | "high" | "xhigh" | "max") {
+        args.push("--config".to_string());
+        args.push(format!("model_reasoning_effort=\"{reasoning_effort}\""));
       }
       Some(codex_launcher_command(args))
     }

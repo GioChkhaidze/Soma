@@ -294,12 +294,6 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.sidebarDetailHeader span {
-  color: var(--muted);
-  font-family: var(--font-mono);
-  font-size: var(--text-2xs);
-  text-transform: uppercase;
-}
 
 .sidebarDetailHeader h2 {
   margin: 0;

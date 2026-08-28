@@ -50,7 +50,6 @@ export function reviewActionLabel(action: ReviewAction): string {
 }
 
 type ReviewMutationPreview = {
-  field: 'compiled_body' | 'section_text' | 'bridge_text';
   label: string;
   text: string;
 };
@@ -59,18 +58,16 @@ export function reviewMutationPreview(item: GraphReviewQueueItem): ReviewMutatio
   const payload = item.mutation_payload;
   if (!payload) return null;
   if (payload.section_text) {
-    return { field: 'section_text', label: 'Section to append', text: payload.section_text };
+    return { label: 'Section to append', text: payload.section_text };
   }
   if (payload.compiled_body) {
     return {
-      field: 'compiled_body',
       label: item.type === 'node' ? 'Proposed node body' : 'Replacement body',
       text: payload.compiled_body
     };
   }
   if (payload.bridge_text) {
     return {
-      field: 'bridge_text',
       label: item.type === 'edge' ? 'Proposed bridge' : 'Replacement bridge',
       text: payload.bridge_text
     };

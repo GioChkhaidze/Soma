@@ -11,6 +11,10 @@ use crate::brain_provider_registry::{brain_provider, is_known_provider, DEFAULT_
 use crate::error::{CommandError, CommandResult};
 use crate::secrets::AppDataCredentialStore;
 
+pub const DEFAULT_CODEX_MODEL: &str = "gpt-5.6-luna";
+pub const DEFAULT_CHAT_REASONING_EFFORT: &str = "medium";
+pub const DEFAULT_GRAPH_REASONING_EFFORT: &str = "xhigh";
+
 const SETTINGS_FILE: &str = "brain_settings.json";
 
 #[derive(Debug, Clone)]
@@ -19,6 +23,8 @@ pub struct BrainSettings {
   pub model: String,
   pub endpoint: String,
   pub auth_profile: String,
+  pub default_reasoning_effort: String,
+  pub graph_reasoning_effort: String,
   pub credential_configured: bool,
   pub updated_at: Option<String>,
 }
@@ -30,8 +36,26 @@ impl BrainSettings {
       model: String::new(),
       endpoint: String::new(),
       auth_profile: String::new(),
+      default_reasoning_effort: DEFAULT_CHAT_REASONING_EFFORT.to_string(),
+      graph_reasoning_effort: DEFAULT_GRAPH_REASONING_EFFORT.to_string(),
       credential_configured: false,
       updated_at: None,
+    }
+  }
+
+  pub fn effective_model(&self) -> &str {
+    if self.provider_id == "codex_sdk" && self.model.trim().is_empty() {
+      DEFAULT_CODEX_MODEL
+    } else {
+      self.model.trim()
+    }
+  }
+
+  fn model_source(&self) -> &'static str {
+    if self.provider_id == "codex_sdk" && self.model.trim().is_empty() {
+      "soma_default"
+    } else {
+      "selected"
     }
   }
 
@@ -42,7 +66,11 @@ impl BrainSettings {
       "endpoint": self.endpoint,
       "authProfile": self.auth_profile,
       "credentialConfigured": self.credential_configured,
-      "updatedAt": self.updated_at
+      "updatedAt": self.updated_at,
+      "effectiveModel": self.effective_model(),
+      "modelSource": self.model_source(),
+      "defaultReasoningEffort": self.default_reasoning_effort,
+      "graphReasoningEffort": self.graph_reasoning_effort,
     })
   }
 }
@@ -130,6 +158,18 @@ pub(crate) fn settings_from_value(value: &Value, store: &AppDataCredentialStore)
     model: string_field(value, "model"),
     endpoint,
     auth_profile,
+    default_reasoning_effort: reasoning_effort_field(
+      value,
+      "defaultReasoningEffort",
+      "default_reasoning_effort",
+      DEFAULT_CHAT_REASONING_EFFORT,
+    ),
+    graph_reasoning_effort: reasoning_effort_field(
+      value,
+      "graphReasoningEffort",
+      "graph_reasoning_effort",
+      DEFAULT_GRAPH_REASONING_EFFORT,
+    ),
     updated_at: value.get("updatedAt").or_else(|| value.get("updated_at")).and_then(Value::as_str).map(str::to_string),
   }
 }
@@ -150,6 +190,8 @@ fn write_settings_file_locked(
     "model": settings.model,
     "endpoint": settings.endpoint,
     "authProfile": settings.auth_profile,
+    "defaultReasoningEffort": settings.default_reasoning_effort,
+    "graphReasoningEffort": settings.graph_reasoning_effort,
     "updatedAt": settings.updated_at
   });
   let contents =
@@ -159,6 +201,17 @@ fn write_settings_file_locked(
 
 fn string_field(value: &Value, key: &str) -> String {
   value.get(key).and_then(Value::as_str).unwrap_or("").trim().to_string()
+}
+
+fn reasoning_effort_field(value: &Value, camel_key: &str, snake_key: &str, fallback: &str) -> String {
+  value
+    .get(camel_key)
+    .or_else(|| value.get(snake_key))
+    .and_then(Value::as_str)
+    .map(str::trim)
+    .filter(|effort| matches!(*effort, "none" | "low" | "medium" | "high" | "xhigh" | "max"))
+    .unwrap_or(fallback)
+    .to_string()
 }
 
 fn endpoint_override(provider_id: &str, value: &Value) -> String {
@@ -319,6 +372,43 @@ mod tests {
       serde_json::from_str::<Value>(&fs::read_to_string(root.join(SETTINGS_FILE)).unwrap()).unwrap()["endpoint"],
       ""
     );
+    let _ = fs::remove_dir_all(root);
+  }
+
+  #[test]
+  fn codex_reasoning_efforts_round_trip_and_invalid_values_fall_back() {
+    let root = std::env::temp_dir().join(format!("soma-brain-effort-test-{}", uuid::Uuid::new_v4()));
+    save_brain_settings_in_dir(
+      &root,
+      json!({
+        "providerId": "codex_sdk",
+        "model": "gpt-5.6-terra",
+        "endpoint": "",
+        "authProfile": "",
+        "defaultReasoningEffort": "low",
+        "graphReasoningEffort": "max"
+      }),
+    )
+    .unwrap();
+
+    let loaded = load_brain_settings_from_dir(&root).unwrap();
+    assert_eq!(loaded.default_reasoning_effort, "low");
+    assert_eq!(loaded.graph_reasoning_effort, "max");
+    assert_eq!(loaded.to_public_json()["defaultReasoningEffort"], "low");
+    assert_eq!(loaded.to_public_json()["graphReasoningEffort"], "max");
+
+    let fallback = save_brain_settings_in_dir(
+      &root,
+      json!({
+        "providerId": "codex_sdk",
+        "model": "gpt-5.6-luna",
+        "defaultReasoningEffort": "impossible",
+        "graphReasoningEffort": "automatic"
+      }),
+    )
+    .unwrap();
+    assert_eq!(fallback.default_reasoning_effort, DEFAULT_CHAT_REASONING_EFFORT);
+    assert_eq!(fallback.graph_reasoning_effort, DEFAULT_GRAPH_REASONING_EFFORT);
     let _ = fs::remove_dir_all(root);
   }
 

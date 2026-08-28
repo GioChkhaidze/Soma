@@ -29,9 +29,6 @@
   line-height: var(--line-ui);
 }
 
-.workspaceMiniStatus small {
-  grid-column: 1;
-}
 
 .workspaceActions,
 .workspaceCompileAction,
@@ -346,12 +343,6 @@
   font-size: var(--text-sm);
 }
 
-.jobRunHint {
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--text-xs);
-  line-height: var(--line-ui);
-}
 
 .jobRunAdvanced {
   display: grid;
@@ -368,14 +359,6 @@
   text-transform: uppercase;
 }
 
-.jobRunPath {
-  margin: 0;
-  overflow-wrap: anywhere;
-  color: var(--muted);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  line-height: var(--line-ui);
-}
 
 .jobRunAdvancedFooter {
   display: flex;
@@ -788,9 +771,6 @@
   background: transparent;
 }
 
-.reviewItem.isOpen {
-  border-color: rgba(255, 255, 255, 0.18);
-}
 
 .reviewItemSummary {
   display: grid;
@@ -866,10 +846,4 @@
 .reviewActions button:disabled {
   cursor: default;
   opacity: 0.38;
-}
-
-.reviewEmpty {
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--text-sm);
 }

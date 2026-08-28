@@ -119,8 +119,9 @@ A canvas node contains:
 - source chunk identifiers and body version identifiers
 - creation and update times
 
-`load_graph_node_detail` returns the full body, sections, evidence, limits, and version
-history.
+`load_graph_node_detail` returns the full body, evidence, version history, and a
+bounded relation projection. Each relation identifies its titled neighbor and its
+direction relative to the selected node. `is_partial` makes truncation explicit.
 
 A canvas edge contains:
 
@@ -136,7 +137,8 @@ The canvas snapshot does not contain:
 - projection state
 - layout state
 
-The inspector can calculate neighbors from accepted nodes and accepted edges.
+The inspector reads this node-specific relation projection. It does not infer
+relationships from the bounded canvas snapshot.
 
 ## Paths and focus sets
 

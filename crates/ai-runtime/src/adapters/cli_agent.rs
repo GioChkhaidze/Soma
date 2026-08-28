@@ -84,7 +84,7 @@ impl CliAgentRuntime {
         command.stdin(Stdio::null());
       }
     }
-    configure_process_group(&mut command);
+    configure_child_process(&mut command);
 
     let mut child = command.spawn().map_err(|error| AiRuntimeError::ProviderExecution {
       provider: self.config.provider_id.clone(),
@@ -100,6 +100,7 @@ impl CliAgentRuntime {
     let timeout = Duration::from_millis(request.timeout_ms);
     let started = Instant::now();
     let mut timed_out = false;
+    let mut cancelled = false;
 
     let exit_status = loop {
       if let Some(status) = child.try_wait().map_err(|error| AiRuntimeError::ProviderExecution {
@@ -117,6 +118,15 @@ impl CliAgentRuntime {
         })?;
         break status;
       }
+      if request.cancellation.is_cancelled() {
+        cancelled = true;
+        let _ = kill_process_tree(&mut child);
+        let status = child.wait().map_err(|error| AiRuntimeError::ProviderExecution {
+          provider: self.config.provider_id.clone(),
+          message: format!("Runtime command wait failed after cancellation: {error}"),
+        })?;
+        break status;
+      }
       thread::sleep(Duration::from_millis(POLL_INTERVAL_MS));
     };
 
@@ -124,7 +134,9 @@ impl CliAgentRuntime {
     let stderr_capture = collect_pipe(stderr_reader);
     let stdout = String::from_utf8_lossy(&stdout_capture.bytes).to_string();
     let stderr = String::from_utf8_lossy(&stderr_capture.bytes).to_string();
-    let status = if timed_out {
+    let status = if cancelled {
+      AgentTaskStatus::Cancelled
+    } else if timed_out {
       AgentTaskStatus::TimedOut
     } else if exit_status.success() {
       AgentTaskStatus::Completed
@@ -265,19 +277,29 @@ fn apply_env(command: &mut Command, env_vars: &[(String, String)]) {
 }
 
 #[cfg(unix)]
-fn configure_process_group(command: &mut Command) {
+fn configure_child_process(command: &mut Command) {
   use std::os::unix::process::CommandExt;
 
   command.process_group(0);
 }
 
-#[cfg(not(unix))]
-fn configure_process_group(_: &mut Command) {}
+#[cfg(windows)]
+fn configure_child_process(command: &mut Command) {
+  use std::os::windows::process::CommandExt;
+
+  const CREATE_NO_WINDOW: u32 = 0x08000000;
+  command.creation_flags(CREATE_NO_WINDOW);
+}
+
+#[cfg(not(any(windows, unix)))]
+fn configure_child_process(_: &mut Command) {}
 
 #[cfg(windows)]
 fn kill_process_tree(child: &mut Child) -> std::io::Result<()> {
   let pid = child.id().to_string();
-  let _ = Command::new("taskkill")
+  let mut command = Command::new("taskkill");
+  configure_child_process(&mut command);
+  let _ = command
     .args(["/PID", pid.as_str(), "/T", "/F"])
     .stdin(Stdio::null())
     .stdout(Stdio::null())
@@ -388,6 +410,21 @@ mod tests {
     let _ = fs::remove_dir_all(work_dir);
   }
 
+  #[cfg(windows)]
+  #[test]
+  fn windows_cli_child_does_not_open_console_window() {
+    let helper = TestHelper::compile();
+    let work_dir = temp_dir("no-console-window-work");
+    fs::create_dir_all(&work_dir).unwrap();
+    let runtime = runtime_with_args(&helper.program, vec!["--console-window-present"], CliPromptMode::Stdin);
+
+    let result = runtime.run_task(AgentTaskRequest::new(&work_dir, "", 1_000)).unwrap();
+
+    assert_eq!(result.status, AgentTaskStatus::Completed);
+    assert_eq!(result.stdout.trim(), "false");
+    let _ = fs::remove_dir_all(work_dir);
+  }
+
   #[test]
   fn times_out_and_returns_without_hanging() {
     let helper = TestHelper::compile();
@@ -399,6 +436,26 @@ mod tests {
     let result = runtime.run_task(AgentTaskRequest::new(&work_dir, "", 80)).unwrap();
 
     assert_eq!(result.status, AgentTaskStatus::TimedOut);
+    assert!(started.elapsed() < Duration::from_secs(2));
+    let _ = fs::remove_dir_all(work_dir);
+  }
+
+  #[test]
+  fn cancellation_kills_the_runtime_without_waiting_for_timeout() {
+    let helper = TestHelper::compile();
+    let work_dir = temp_dir("cancel-work");
+    fs::create_dir_all(&work_dir).unwrap();
+    let runtime = runtime_with_args(&helper.program, vec!["--sleep-ms", "5000"], CliPromptMode::Stdin);
+    let cancellation = crate::agent::AgentTaskCancellation::new();
+    let request = AgentTaskRequest::new(&work_dir, "", 10_000).with_cancellation(cancellation.clone());
+    let started = Instant::now();
+
+    let task = std::thread::spawn(move || runtime.run_task(request).unwrap());
+    std::thread::sleep(Duration::from_millis(80));
+    cancellation.cancel();
+    let result = task.join().unwrap();
+
+    assert_eq!(result.status, AgentTaskStatus::Cancelled);
     assert!(started.elapsed() < Duration::from_secs(2));
     let _ = fs::remove_dir_all(work_dir);
   }
@@ -534,6 +591,22 @@ use std::env;
 use std::io::{self, Read, Write};
 use std::thread;
 use std::time::Duration;
+#[cfg(windows)]
+#[link(name = "Kernel32")]
+extern "system" {
+    fn GetConsoleWindow() -> *mut std::ffi::c_void;
+}
+
+#[cfg(windows)]
+fn console_window_present() -> bool {
+    unsafe { !GetConsoleWindow().is_null() }
+}
+
+#[cfg(not(windows))]
+fn console_window_present() -> bool {
+    false
+}
+
 
 fn main() {
     let mut args = env::args().skip(1);
@@ -542,6 +615,7 @@ fn main() {
         match arg.as_str() {
             "--stdout" => println!("{}", args.next().unwrap_or_default()),
             "--stderr" => eprintln!("{}", args.next().unwrap_or_default()),
+            "--console-window-present" => println!("{}", console_window_present()),
             "--exit" => {
                 exit_code = args.next().unwrap_or_default().parse().unwrap_or(1);
             }

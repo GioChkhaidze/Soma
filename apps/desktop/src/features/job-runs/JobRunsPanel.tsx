@@ -147,7 +147,7 @@ export function JobRunsPanel({
                   <dt>Chunks</dt>
                   <dd>
                     {primaryJob.includedChunkCount ?? primaryJob.chunkCount}
-                    {primaryJob.truncated && primaryJob.totalChunkCount ? ` / ${primaryJob.totalChunkCount}` : ''}
+                    {primaryJob.truncated && primaryJob.totalChunkCount ? ` of ${primaryJob.totalChunkCount}` : ''}
                   </dd>
                 </div>
                 <div>
@@ -156,7 +156,6 @@ export function JobRunsPanel({
                 </div>
               </dl>
 
-              <p className="jobRunPath" title={primaryJob.jobDir}>{primaryJob.jobDir}</p>
               {primaryState === jobFlowStates.failed ? (
                 <p className="workspaceError">{jobRunFailureMessage(primaryJob)}</p>
               ) : null}

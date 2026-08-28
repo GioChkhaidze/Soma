@@ -4,12 +4,12 @@ use std::path::{Path, PathBuf};
 use serde_json::{json, Value};
 #[cfg(test)]
 use soma_ai_runtime::NoopCredentialResolver;
+use soma_ai_runtime::{
+  AgentTaskCancellation, AiMessage, AiRequest, AiRuntimeError, AnthropicMessagesConfig, AnthropicMessagesProvider,
+  CredentialRef, CredentialResolver, ModelId, OpenAiCompatibleConfig, OpenAiCompatibleProvider, ProviderId,
+};
 #[cfg(test)]
 use soma_ai_runtime::{AgentTaskRequest, AgentTaskStatus, CliAgentConfig, CliAgentRuntime, CliPromptMode};
-use soma_ai_runtime::{
-  AiMessage, AiRequest, AiRuntimeError, AnthropicMessagesConfig, AnthropicMessagesProvider, CredentialRef,
-  CredentialResolver, ModelId, OpenAiCompatibleConfig, OpenAiCompatibleProvider, ProviderId,
-};
 
 use crate::brain_provider_registry::{brain_provider, BrainProviderAdapter, BrainProviderSpec, DEFAULT_PROVIDER_ID};
 use crate::brain_settings::BrainSettings;
@@ -24,7 +24,7 @@ use crate::secrets::AppDataCredentialStore;
 mod runtime_profile;
 
 pub use runtime_profile::{authorize_codex_brain_status, codex_brain_status};
-use runtime_profile::{run_profile_chat_turn, run_profile_command, ProfileCommand};
+use runtime_profile::{run_profile_chat_turn_with_cancellation, run_profile_command, ProfileCommand};
 
 const JOB_PROMPT_MAX_BYTES: usize = 90_000;
 const ADAPTER_OUTPUT_MAX_BYTES: usize = 180_000;
@@ -66,12 +66,23 @@ pub fn default_runtime_descriptor() -> Value {
 }
 
 pub fn runtime_descriptor(settings: &BrainSettings) -> Value {
+  let effective_model = settings.effective_model();
   let mut descriptor = json!({
     "schema_version": 1,
     "providerId": settings.provider_id,
-    "model": settings.model,
+    "model": effective_model,
     "endpoint": settings.endpoint,
     "credentialConfigured": settings.credential_configured,
+    "chatReasoningEffort": if settings.provider_id == "codex_sdk" {
+      settings.default_reasoning_effort.as_str()
+    } else {
+      ""
+    },
+    "reasoningEffort": if settings.provider_id == "codex_sdk" {
+      settings.graph_reasoning_effort.as_str()
+    } else {
+      ""
+    },
     "adapter": adapter_for(settings)
   });
   if settings.provider_id == "codex_sdk" {
@@ -217,10 +228,11 @@ pub fn run_compile_job_with_credentials(
   }
 }
 
-pub fn run_chat_turn_with_credentials(
+pub fn run_chat_turn_with_credentials_and_cancellation(
   runtime: &Value,
   request: &Value,
   credentials: &dyn CredentialResolver,
+  cancellation: AgentTaskCancellation,
 ) -> CommandResult<RuntimeChatTurnResult> {
   let adapter = runtime.get("adapter").unwrap_or(&Value::Null);
   let adapter_kind = adapter_kind(adapter);
@@ -230,8 +242,12 @@ pub fn run_chat_turn_with_credentials(
       run_openai_compatible_chat_turn(runtime, adapter, request, credentials)
     }
     "anthropic_messages_provider" => run_anthropic_messages_chat_turn(runtime, adapter, request, credentials),
-    "codex_sdk_profile" => run_profile_chat_turn(runtime, adapter, request, ProfileCommand::Codex),
-    "claude_code_profile" => run_profile_chat_turn(runtime, adapter, request, ProfileCommand::Claude),
+    "codex_sdk_profile" => {
+      run_profile_chat_turn_with_cancellation(runtime, adapter, request, ProfileCommand::Codex, cancellation)
+    }
+    "claude_code_profile" => {
+      run_profile_chat_turn_with_cancellation(runtime, adapter, request, ProfileCommand::Claude, cancellation)
+    }
     "managed_provider" => Ok(RuntimeChatTurnResult {
       adapter_kind,
       status: "unsupported",
