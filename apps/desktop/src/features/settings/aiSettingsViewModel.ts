@@ -76,7 +76,7 @@ export function activeBrainLabel(settings: AiSettingsDraft | null) {
   if (!settings) return 'Loading Brain';
   const provider = providerById(settings.providerId);
   const model = effectiveBrainModel(settings);
-  return model ? `${provider.shortName} · ${model}` : provider.shortName;
+  return model ? `${provider.shortName} / ${model}` : provider.shortName;
 }
 
 export function activeBrainEffort(settings: AiSettingsDraft | null, capturesGraph: boolean) {

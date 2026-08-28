@@ -31,7 +31,6 @@ export function BrainRunStatus({
 
   return (
     <div className={`brainRunStatus ${active ? 'isActive' : 'isIdle'}`} role="status" aria-live="polite">
-      <span className="brainRunSignal" aria-hidden="true" />
       <span className="brainRunIdentity">
         {active ? 'Running' : 'Brain'} <strong>{brainLabel}</strong>
       </span>

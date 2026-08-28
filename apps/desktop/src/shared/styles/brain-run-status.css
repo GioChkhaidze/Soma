@@ -9,20 +9,6 @@
   line-height: 1;
 }
 
-.brainRunSignal {
-  width: 6px;
-  height: 6px;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: rgba(142, 160, 187, 0.68);
-}
-
-.brainRunStatus.isActive .brainRunSignal {
-  background: #8db1ff;
-  box-shadow: 0 0 0 4px rgba(111, 153, 238, 0.12);
-  animation: brainRunPulse 1.4s ease-in-out infinite;
-}
-
 .brainRunIdentity {
   min-width: 0;
   overflow: hidden;
@@ -37,11 +23,8 @@
 
 .brainRunEffort {
   flex: 0 0 auto;
-  padding: 3px 5px;
-  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
-  border-radius: 999px;
   color: rgba(179, 203, 249, 0.88);
-  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .brainRunStatus time {
@@ -70,10 +53,4 @@
 .brainRunStatus button:disabled {
   cursor: wait;
   opacity: 0.62;
-}
-
-@keyframes brainRunPulse {
-  50% {
-    opacity: 0.48;
-  }
 }

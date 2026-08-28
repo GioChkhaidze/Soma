@@ -85,8 +85,11 @@ test('node chat shows its Brain and accepts the next draft while blocking duplic
 
   await expect(nodeChat.getByRole('button', { name: 'Thinking' })).toBeDisabled();
   await expect(composer).toBeEnabled();
-  await expect(nodeChat.getByRole('status')).toContainText('Running Codex · gpt-5.6-luna');
-  await expect(nodeChat.getByRole('status')).toContainText('medium');
+  const brainStatus = nodeChat.getByRole('status');
+  await expect(brainStatus).toContainText('Running Codex / gpt-5.6-luna');
+  await expect(brainStatus).toContainText('medium');
+  await expect(brainStatus).not.toContainText('effort');
+  await expect(brainStatus.locator('.brainRunSignal')).toHaveCount(0);
   await expect(nodeChat.getByRole('button', { name: 'Stop' })).toBeVisible();
   await expect(nodeChat.getByText('Thinking...')).toBeVisible();
   await expect.poll(() => page.evaluate(() => (

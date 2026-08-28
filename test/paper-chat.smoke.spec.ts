@@ -119,6 +119,16 @@ test('paper state and chat dock stay stable while reading', async ({ page }) => 
   const transcript = page.locator('.graphChatTranscriptInner');
   await expect(transcript).toBeVisible();
   await expectOpaqueSurface(transcript);
+  const brainStatus = composer.getByRole('status');
+  await expect(brainStatus).toContainText('Brain Codex /');
+  await expect(brainStatus).toContainText('medium');
+  await expect(brainStatus).not.toContainText('effort');
+  await expect(brainStatus.locator('.brainRunSignal')).toHaveCount(0);
+  const transcriptBox = await requiredBox(transcript);
+  const composerWithTranscriptBox = await requiredBox(composer);
+  const transcriptGap = composerWithTranscriptBox.y - (transcriptBox.y + transcriptBox.height);
+  expect(transcriptGap).toBeGreaterThanOrEqual(0);
+  expect(transcriptGap).toBeLessThanOrEqual(10);
   const chatArgs = await page.evaluate(() => (
     globalThis as typeof globalThis & { __lastGraphChatArgs?: Record<string, unknown> }
   ).__lastGraphChatArgs);

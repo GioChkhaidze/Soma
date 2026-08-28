@@ -190,16 +190,16 @@ export function GraphChatPanel({
           if (!readingContextPending) void onSubmit();
         }}
       >
-        <BrainRunStatus
-          brainLabel={brainLabel}
-          effort={activeRun?.effort ?? brainEffort}
-          active={activeRun !== null}
-          startedAt={activeRun?.startedAt ?? null}
-          stopping={activeRun?.stopping}
-          canStop={canStop}
-          onStop={onStop}
-        />
         <div className="graphChatComposer hasCaptureToggle">
+          <BrainRunStatus
+            brainLabel={brainLabel}
+            effort={activeRun?.effort ?? brainEffort}
+            active={activeRun !== null}
+            startedAt={activeRun?.startedAt ?? null}
+            stopping={activeRun?.stopping}
+            canStop={canStop}
+            onStop={onStop}
+          />
           <CaptureGraphToggle
             enabled={captureGraphChanges}
             onChange={onCaptureGraphChangesChange}

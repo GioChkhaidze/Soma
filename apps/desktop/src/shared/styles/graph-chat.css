@@ -436,6 +436,12 @@
   grid-template-columns: 32px minmax(0, 1fr) 34px;
 }
 
+.graphChatComposer > .brainRunStatus {
+  grid-column: 1 / -1;
+  min-height: 14px;
+  padding: 2px 2px 0 0;
+}
+
 .graphChatComposer:focus-within {
   box-shadow:
     0 14px 42px rgba(0, 0, 0, 0.32),
