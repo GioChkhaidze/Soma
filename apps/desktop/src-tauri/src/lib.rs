@@ -16,6 +16,8 @@ mod graph_write_model;
 mod job_files;
 mod jobs;
 mod layout_state;
+#[cfg(test)]
+mod live_codex_e2e_tests;
 mod repository;
 mod retrieval;
 mod retrieval_read_model;

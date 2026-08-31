@@ -172,6 +172,7 @@ export function useWorkspaceController({
   }, [setWorkspace, workspaceGuard]);
 
   const runWorkspaceAction = useCallback(async (action: () => Promise<void>) => {
+    if (workspaceActionRef.current) return;
     const request = {};
     workspaceActionRef.current = request;
     setWorkspaceBusy(true);

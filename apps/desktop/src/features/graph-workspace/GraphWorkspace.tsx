@@ -106,11 +106,10 @@ export function GraphWorkspace({
         flowInstanceRef.current?.fitView({ padding: 0.22, duration: 180 });
       });
     };
-    const observer = new ResizeObserver(refit);
-    observer.observe(canvas);
+    window.addEventListener('resize', refit);
     refit();
     return () => {
-      observer.disconnect();
+      window.removeEventListener('resize', refit);
       if (animationFrame !== null) {
         window.cancelAnimationFrame(animationFrame);
       }
@@ -186,7 +185,7 @@ export function GraphWorkspace({
           nodeTypes={nodeTypes}
           nodesDraggable={projectedSnapshot.nodes.length > 0}
           nodesConnectable={false}
-          elementsSelectable
+          elementsSelectable={false}
           onInit={handleFlowInit}
           onNodeClick={handleNodeClick}
           onPaneClick={onClearSelection}

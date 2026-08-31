@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 import type {
   GraphNodeDetail,
@@ -71,6 +71,7 @@ export function NodeInspector({
   const [bodyDraft, setBodyDraft] = useState(node.compiled_body);
   const [bodyBusy, setBodyBusy] = useState(false);
   const [bodyError, setBodyError] = useState<string | null>(null);
+  const bodyMutationRef = useRef(false);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
 
@@ -266,27 +267,25 @@ export function NodeInspector({
   async function saveBodyDraft() {
     const nextBody = bodyDraft.trim();
     if (!nextBody || nextBody === activeNode.compiled_body) return;
-    setBodyBusy(true);
-    setBodyError(null);
-    try {
-      await onSaveNodeBody(activeNode.id, nextBody);
-      setIsEditingBody(false);
-    } catch (error) {
-      setBodyError(formatError(error));
-    } finally {
-      setBodyBusy(false);
-    }
+    await runBodyMutation(() => onSaveNodeBody(activeNode.id, nextBody));
   }
 
   async function rollbackBody(versionNumber: number) {
+    await runBodyMutation(() => onRollbackNodeBody(activeNode.id, versionNumber));
+  }
+
+  async function runBodyMutation(action: () => Promise<void>) {
+    if (bodyMutationRef.current) return;
+    bodyMutationRef.current = true;
     setBodyBusy(true);
     setBodyError(null);
     try {
-      await onRollbackNodeBody(activeNode.id, versionNumber);
+      await action();
       setIsEditingBody(false);
     } catch (error) {
       setBodyError(formatError(error));
     } finally {
+      bodyMutationRef.current = false;
       setBodyBusy(false);
     }
   }

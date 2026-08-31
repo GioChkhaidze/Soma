@@ -404,6 +404,33 @@ mod tests {
   }
 
   #[test]
+  fn accepting_imported_message_refs_resolves_them_to_canonical_chunks() {
+    let mut store = test_store();
+    seed_chunk(&store.conn, "chunk_1");
+
+    let message = store.append_graph_message("Compile the imported source message.", Vec::new()).unwrap();
+    let message_id = message["message"]["id"].as_str().unwrap();
+    let mut patch = empty_graph_patch();
+    patch["proposed_nodes"] = json!([{
+      "temp_id": "node_imported_message",
+      "type": "concept",
+      "title": "Imported Message Evidence",
+      "compiled_body": "Imported source message references resolve to their stored chunks.",
+      "source_message_ids": ["message_1"],
+      "reason": "The compile patch cited an imported source message."
+    }]);
+
+    store.propose_graph_updates(message_id, patch).unwrap();
+    let proposal_id =
+      store.load_review_queue().unwrap()["groups"]["proposed"]["items"][0]["id"].as_str().unwrap().to_string();
+    store.accept_graph_proposal(&proposal_id, None).unwrap();
+
+    let snapshot = store.load_graph_snapshot().unwrap();
+    assert_eq!(snapshot["nodes"][0]["source_chunk_ids"], json!(["chunk_1"]));
+    assert_eq!(snapshot["nodes"][0]["evidence"][0]["message_id"], "message_1");
+  }
+
+  #[test]
   fn search_graph_node_cards_reaches_nodes_outside_startup_canvas() {
     let store = test_store();
     let now = now_string().unwrap();

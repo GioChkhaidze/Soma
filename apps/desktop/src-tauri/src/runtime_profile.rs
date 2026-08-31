@@ -26,8 +26,10 @@ pub(super) const CODEX_RUNTIME_BUSY_MESSAGE: &str =
 pub(super) const CODEX_STORAGE_BUSY_MESSAGE: &str =
   "Codex profile storage is busy. Wait for the current Codex run to finish, then try again.";
 
-const PROFILE_RUNTIME_TIMEOUT: Duration = Duration::from_secs(240);
-const CHAT_RUNTIME_TIMEOUT: Duration = Duration::from_secs(120);
+// Graph extraction and graph-mutating chat use high-reasoning profile runs. Real Codex
+// sessions can legitimately spend several minutes reasoning before writing their JSON.
+const GRAPH_COMPILE_TIMEOUT: Duration = Duration::from_secs(600);
+const CHAT_RUNTIME_TIMEOUT: Duration = Duration::from_secs(360);
 const CODEX_PROBE_TIMEOUT_MS: u64 = 2_000;
 const CODEX_STORAGE_BUSY_RETRY_DELAYS: [Duration; 2] = [Duration::from_millis(250), Duration::from_millis(750)];
 
@@ -379,7 +381,7 @@ pub(super) fn run_profile_command(
   let program = config.program.clone();
   let output = match run_profile_agent_task_with_storage_retry(
     config,
-    AgentTaskRequest::new(job_dir, prompt, PROFILE_RUNTIME_TIMEOUT.as_millis() as u64),
+    AgentTaskRequest::new(job_dir, prompt, GRAPH_COMPILE_TIMEOUT.as_millis() as u64),
     command_kind,
   ) {
     Ok(output) => output,
@@ -409,7 +411,7 @@ pub(super) fn run_profile_command(
       failure_kind: Some(RuntimeFailureKind::Timeout),
       message: format!(
         "Runtime command timed out after {} seconds. {}",
-        PROFILE_RUNTIME_TIMEOUT.as_secs(),
+        GRAPH_COMPILE_TIMEOUT.as_secs(),
         profile_command_failure_message(command_kind, output.exit_code, &stdout, &stderr)
       ),
       wrote_output_patch: wrote_stdout_patch || output_patch_ready,

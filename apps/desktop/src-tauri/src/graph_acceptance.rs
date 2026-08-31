@@ -24,6 +24,11 @@ pub(super) struct InsertedEvidence {
   pub(super) id: String,
 }
 
+struct ProposalEvidence {
+  chunk_ids: Vec<String>,
+  thread_message_ids: Vec<String>,
+}
+
 pub(crate) fn update_node_body(conn: &Connection, node_id: &str, compiled_body: &str) -> CommandResult<Value> {
   let node_id = node_id.trim();
   if node_id.is_empty() {
@@ -92,10 +97,13 @@ pub(super) fn accept_proposal_into_graph(conn: &Connection, proposal: &Value) ->
 
 fn accept_node_proposal(conn: &Connection, proposal: &Value) -> CommandResult<AcceptedEntity> {
   let payload = &proposal["payload"];
-  let chunk_ids = source_chunk_ids(payload);
-  let message_ids = proposal_source_message_ids(conn, proposal)?;
+  let evidence = proposal_evidence(conn, proposal)?;
   let compiled_body = required_payload_string(payload, "compiled_body")?;
-  validate_active_body_input(compiled_body, !chunk_ids.is_empty() || !message_ids.is_empty(), false)?;
+  validate_active_body_input(
+    compiled_body,
+    !evidence.chunk_ids.is_empty() || !evidence.thread_message_ids.is_empty(),
+    false,
+  )?;
   let created_at = now_string()?;
   let node_id = new_id();
   let body_version_id = new_id();
@@ -110,10 +118,25 @@ fn accept_node_proposal(conn: &Connection, proposal: &Value) -> CommandResult<Ac
     ),
     params![node_id, node_type, title, preview, created_at],
   )?;
-  insert_evidence_links(conn, "node", &node_id, &chunk_ids, &created_at)?;
-  insert_message_evidence_links(conn, "node", &node_id, &message_ids, None, &created_at)?;
-  insert_node_body_version_with_id(conn, &body_version_id, &node_id, compiled_body, false, &chunk_ids, &created_at)?;
-  insert_message_evidence_links(conn, "node_body_version", &body_version_id, &message_ids, None, &created_at)?;
+  insert_evidence_links(conn, "node", &node_id, &evidence.chunk_ids, &created_at)?;
+  insert_message_evidence_links(conn, "node", &node_id, &evidence.thread_message_ids, None, &created_at)?;
+  insert_node_body_version_with_id(
+    conn,
+    &body_version_id,
+    &node_id,
+    compiled_body,
+    false,
+    &evidence.chunk_ids,
+    &created_at,
+  )?;
+  insert_message_evidence_links(
+    conn,
+    "node_body_version",
+    &body_version_id,
+    &evidence.thread_message_ids,
+    None,
+    &created_at,
+  )?;
   conn
     .execute("UPDATE graph_nodes SET current_body_version_id = ?1 WHERE id = ?2", params![body_version_id, node_id])?;
 
@@ -128,9 +151,8 @@ fn accept_node_proposal(conn: &Connection, proposal: &Value) -> CommandResult<Ac
 
 fn accept_edge_proposal(conn: &Connection, proposal: &Value) -> CommandResult<AcceptedEntity> {
   let payload = &proposal["payload"];
-  let chunk_ids = source_chunk_ids(payload);
-  let message_ids = proposal_source_message_ids(conn, proposal)?;
-  if chunk_ids.is_empty() && message_ids.is_empty() {
+  let evidence = proposal_evidence(conn, proposal)?;
+  if evidence.chunk_ids.is_empty() && evidence.thread_message_ids.is_empty() {
     return Err(CommandError::validation("Cannot accept edge proposal without evidence or explicit user authorship."));
   }
   let source = resolve_node_ref(conn, proposal["patch_id"].as_str().unwrap_or(""), edge_source_ref(payload))?;
@@ -149,8 +171,8 @@ fn accept_edge_proposal(conn: &Connection, proposal: &Value) -> CommandResult<Ac
     ),
     params![edge_id, source, target, edge_type, bridge_text, created_at],
   )?;
-  insert_evidence_links(conn, "edge", &edge_id, &chunk_ids, &created_at)?;
-  insert_message_evidence_links(conn, "edge", &edge_id, &message_ids, None, &created_at)?;
+  insert_evidence_links(conn, "edge", &edge_id, &evidence.chunk_ids, &created_at)?;
+  insert_message_evidence_links(conn, "edge", &edge_id, &evidence.thread_message_ids, None, &created_at)?;
   Ok(AcceptedEntity {
     entity_type: "edge".to_string(),
     entity_id: edge_id.clone(),
@@ -173,13 +195,23 @@ fn accept_node_body_update_proposal(conn: &Connection, proposal: &Value) -> Comm
     .ok_or_else(|| CommandError::validation("Node body update target_node_id is required."))?;
   require_active_node(conn, node_id)?;
   require_matching_body_version(conn, node_id, payload)?;
-  let chunk_ids = source_chunk_ids(payload);
-  let message_ids = proposal_source_message_ids(conn, proposal)?;
+  let evidence = proposal_evidence(conn, proposal)?;
   let compiled_body = node_body_update_text(conn, node_id, payload)?;
-  validate_active_body_input(&compiled_body, !chunk_ids.is_empty() || !message_ids.is_empty(), false)?;
-  let version_id = insert_node_body_version(conn, node_id, &compiled_body, false, &chunk_ids, &now_string()?)?;
+  validate_active_body_input(
+    &compiled_body,
+    !evidence.chunk_ids.is_empty() || !evidence.thread_message_ids.is_empty(),
+    false,
+  )?;
+  let version_id = insert_node_body_version(conn, node_id, &compiled_body, false, &evidence.chunk_ids, &now_string()?)?;
   let updated_at = now_string()?;
-  insert_message_evidence_links(conn, "node_body_version", &version_id, &message_ids, None, &updated_at)?;
+  insert_message_evidence_links(
+    conn,
+    "node_body_version",
+    &version_id,
+    &evidence.thread_message_ids,
+    None,
+    &updated_at,
+  )?;
   conn.execute(
     "UPDATE graph_nodes SET current_body_version_id = ?1, updated_at = ?2 WHERE id = ?3",
     params![version_id, updated_at, node_id],
@@ -221,9 +253,8 @@ fn accept_edge_bridge_update_proposal(conn: &Connection, proposal: &Value) -> Co
     .ok_or_else(|| CommandError::validation("Edge bridge update target_edge_id is required."))?;
   require_active_edge(conn, edge_id)?;
   require_matching_edge_revision(conn, edge_id, payload)?;
-  let chunk_ids = source_chunk_ids(payload);
-  let message_ids = proposal_source_message_ids(conn, proposal)?;
-  if chunk_ids.is_empty() && message_ids.is_empty() {
+  let evidence = proposal_evidence(conn, proposal)?;
+  if evidence.chunk_ids.is_empty() && evidence.thread_message_ids.is_empty() {
     return Err(CommandError::validation(
       "Cannot accept edge bridge update without evidence or explicit user authorship.",
     ));
@@ -234,8 +265,15 @@ fn accept_edge_bridge_update_proposal(conn: &Connection, proposal: &Value) -> Co
     "UPDATE graph_edges SET bridge_text = ?1, updated_at = ?2 WHERE id = ?3",
     params![bridge_text, updated_at, edge_id],
   )?;
-  let mut inserted_evidence = insert_evidence_links(conn, "edge", edge_id, &chunk_ids, &updated_at)?;
-  inserted_evidence.extend(insert_message_evidence_links(conn, "edge", edge_id, &message_ids, None, &updated_at)?);
+  let mut inserted_evidence = insert_evidence_links(conn, "edge", edge_id, &evidence.chunk_ids, &updated_at)?;
+  inserted_evidence.extend(insert_message_evidence_links(
+    conn,
+    "edge",
+    edge_id,
+    &evidence.thread_message_ids,
+    None,
+    &updated_at,
+  )?);
   Ok(AcceptedEntity {
     entity_type: "edge".to_string(),
     entity_id: edge_id.to_string(),
@@ -371,20 +409,41 @@ fn insert_message_evidence_links(
   Ok(inserted)
 }
 
-fn proposal_source_message_ids(conn: &Connection, proposal: &Value) -> CommandResult<Vec<String>> {
-  let mut seen = HashSet::new();
-  let mut ids = Vec::new();
-  for id in source_message_ids(&proposal["payload"]) {
-    if seen.insert(id.clone()) {
-      ids.push(id);
+fn proposal_evidence(conn: &Connection, proposal: &Value) -> CommandResult<ProposalEvidence> {
+  let payload = &proposal["payload"];
+  let mut chunk_ids = source_chunk_ids(payload);
+  let mut seen_chunks = chunk_ids.iter().cloned().collect::<HashSet<_>>();
+  let mut thread_message_ids = Vec::new();
+  let mut seen_messages = HashSet::new();
+
+  for message_id in source_message_ids(payload) {
+    if !seen_messages.insert(message_id.clone()) {
+      continue;
+    }
+    if graph_thread_message_exists(conn, &message_id)? || node_thread_message_exists(conn, &message_id)? {
+      thread_message_ids.push(message_id);
+      continue;
+    }
+
+    let mut stmt = conn.prepare("SELECT id FROM chunks WHERE message_id = ?1 ORDER BY chunk_index, id")?;
+    let rows = stmt.query_map(params![message_id], |row| row.get::<_, String>(0))?;
+    let imported_chunk_ids = rows.collect::<Result<Vec<_>, _>>()?;
+    if imported_chunk_ids.is_empty() {
+      return Err(CommandError::not_found(format!("Evidence message not found: {message_id}")));
+    }
+    for chunk_id in imported_chunk_ids {
+      if seen_chunks.insert(chunk_id.clone()) {
+        chunk_ids.push(chunk_id);
+      }
     }
   }
-  if !ids.is_empty() || !source_chunk_ids(&proposal["payload"]).is_empty() {
-    return Ok(ids);
+
+  if !thread_message_ids.is_empty() || !chunk_ids.is_empty() {
+    return Ok(ProposalEvidence { chunk_ids, thread_message_ids });
   }
 
   let Some(patch_id) = proposal.get("patch_id").and_then(Value::as_str) else {
-    return Ok(ids);
+    return Ok(ProposalEvidence { chunk_ids, thread_message_ids });
   };
   let patch_message_id = conn
     .query_row("SELECT source_message_id FROM graph_patches WHERE id = ?1", params![patch_id], |row| {
@@ -392,10 +451,17 @@ fn proposal_source_message_ids(conn: &Connection, proposal: &Value) -> CommandRe
     })
     .optional()?
     .flatten();
-  if let Some(id) = patch_message_id.filter(|id| seen.insert(id.clone())) {
-    ids.push(id);
+  if let Some(id) = patch_message_id.filter(|id| seen_messages.insert(id.clone())) {
+    thread_message_ids.push(id);
   }
-  Ok(ids)
+  Ok(ProposalEvidence { chunk_ids, thread_message_ids })
+}
+
+fn node_thread_message_exists(conn: &Connection, message_id: &str) -> CommandResult<bool> {
+  let exists: Option<String> = conn
+    .query_row("SELECT id FROM node_thread_messages WHERE id = ?1", params![message_id], |row| row.get(0))
+    .optional()?;
+  Ok(exists.is_some())
 }
 
 fn insert_node_body_version(

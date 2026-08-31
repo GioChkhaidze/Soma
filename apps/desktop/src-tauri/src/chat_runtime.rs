@@ -74,6 +74,20 @@ pub(crate) fn chat_turn_prompt(request: &Value) -> String {
     "reason, and short bridge_text.\n",
   ));
   prompt.push_str(concat!(
+    "- For an existing-to-new edge, use this exact endpoint shape: ",
+    r#"{"source_node_id":"existing-node-id","target_temp_id":"new-node-temp-id","#,
+    r#""type":"supports","reason":"Why they connect.","bridge_text":"Short relation."}. "#,
+    "Never use source or target object fields.\n",
+  ));
+  prompt.push_str(concat!(
+    "- For an existing node body update include target_node_id, reason, and update_kind exactly ",
+    "\"append_section\" or \"replace_body\". append_section requires section_text; replace_body ",
+    "requires compiled_body. Example: ",
+    r#"{"target_node_id":"node-id","update_kind":"append_section","section_text":"New section.","#,
+    r#""reason":"Why this belongs."}."#,
+    "\n",
+  ));
+  prompt.push_str(concat!(
     "- Choose the narrowest true edge type from part_of, supports, contradicts, depends_on, ",
     "answers, implements, mentions, derived_from, alternative_to, blocks, next_step, mitigates; ",
     "use mentions only for co-mentioned ideas when no stronger relation is explicit.\n",
@@ -388,6 +402,10 @@ mod tests {
     assert!(prompt.contains("Connect new and existing nodes with explicit proposed_edges"));
     assert!(prompt.contains("use mentions only for co-mentioned ideas"));
     assert!(prompt.contains("type, reason, and short bridge_text"));
+    assert!(prompt.contains(r#"{"source_node_id":"existing-node-id","target_temp_id":"new-node-temp-id""#));
+    assert!(prompt.contains("Never use source or target object fields"));
+    assert!(prompt.contains("update_kind exactly \"append_section\" or \"replace_body\""));
+    assert!(prompt.contains(r#""section_text":"New section.","reason":"Why this belongs.""#));
     assert!(prompt.contains("Do not introduce yourself as Codex"));
     assert!(prompt.contains("answer as Soma's workspace chat runtime"));
     assert!(!prompt.contains("graph_patch_schema"));
